@@ -7,15 +7,15 @@ from tkinter import filedialog, messagebox, ttk
 
 from core import depolama, kisilik, sahne_kutuphanesi
 
-ZEMIN = "#F0F6F5"
+ZEMIN = "#EDF4F3"
 KART = "#FFFFFF"
-CIZGI = "#D5E5E2"
-METIN_KOYU = "#1A2E30"
-TEAL_KOYU = "#0D4F5C"
-TEAL_VURGU = "#2BB8A0"
-YESIL = "#2BB8A0"
-YESIL_ACIK = "#E0F5F0"
-YESIL_METIN = "#0D5C50"
+CIZGI = "#C8D8D5"
+METIN_KOYU = "#0F2A2C"
+TEAL_KOYU = "#0A3D47"
+TEAL_VURGU = "#20B89A"
+YESIL = "#20B89A"
+YESIL_ACIK = "#DFF5EE"
+VESIKALIK_BOYUT = (160, 213)
 
 
 class SekmeKisilik(ttk.Frame):
@@ -31,11 +31,12 @@ class SekmeKisilik(ttk.Frame):
         paned.pack(fill="both", expand=True, padx=8, pady=8)
 
         # --- Sol: form ---
-        sol = ttk.Frame(paned, style="Kart.TFrame")
+        sol = tk.Frame(paned, bg=KART, highlightthickness=1,
+                       highlightbackground=CIZGI)
         paned.add(sol, width=380)
 
-        ttk.Label(sol, text="Yeni Karakter", style="Vurgu.TLabel",
-                  font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(16, 8))
+        tk.Label(sol, text="Yeni Karakter", bg=KART, fg=TEAL_KOYU,
+                 font=("Segoe UI", 14, "bold")).pack(anchor="w", padx=18, pady=(18, 6))
 
         alanlar = [
             ("ad", "Ad", "Elif"),
@@ -88,32 +89,59 @@ class SekmeKisilik(ttk.Frame):
                                    wraplength=340)
         self.yuz_durum.pack(anchor="w", padx=16, pady=4)
 
-        # --- Sağ: liste + önizleme ---
-        sag = ttk.Frame(paned, style="Kart.TFrame")
+        # --- Sağ: liste + vesikalık ---
+        sag = tk.Frame(paned, bg=KART, highlightthickness=1,
+                       highlightbackground=CIZGI)
         paned.add(sag, width=650)
 
-        ust = ttk.Frame(sag, style="Kart.TFrame")
+        ust = tk.Frame(sag, bg=KART)
         ust.pack(fill="x", padx=12, pady=(12, 4))
-        ttk.Label(ust, text="Karakterler", style="Vurgu.TLabel",
-                  font=("Segoe UI", 12, "bold")).pack(side="left")
+        tk.Label(ust, text="Karakterler", bg=KART, fg=TEAL_KOYU,
+                 font=("Segoe UI", 13, "bold")).pack(side="left")
         ttk.Button(ust, text="Yenile", style="Kart.TButton",
                    command=self._listeyi_yenile).pack(side="right")
 
-        self.tree = ttk.Treeview(sag, columns=("ad", "nis", "seed", "kaynak"),
+        # Liste + vesikalık yan yana
+        liste_f = tk.Frame(sag, bg=KART)
+        liste_f.pack(fill="both", expand=True, padx=12, pady=4)
+
+        self.tree = ttk.Treeview(liste_f, columns=("ad", "nis", "seed", "kaynak"),
                                  show="headings", height=10)
         for col, bas in [("ad", "Ad"), ("nis", "Niş"), ("seed", "Seed"),
                          ("kaynak", "Kaynak")]:
             self.tree.heading(col, text=bas)
-            self.tree.column(col, width=120)
-        self.tree.pack(fill="both", expand=True, padx=12, pady=4)
+            self.tree.column(col, width=100)
+        self.tree.pack(side="left", fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self._secim)
 
+        # Vesikalık panel
+        ves_f = tk.Frame(liste_f, bg=KART, width=220)
+        ves_f.pack(side="right", fill="y", padx=(10, 0))
+        ves_f.pack_propagate(False)
+
+        tk.Label(ves_f, text="Vesikalık", bg=KART, fg=TEAL_KOYU,
+                 font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(0, 4))
+
+        self.vesikalik_kart = tk.Frame(ves_f, bg=ZEMIN, highlightthickness=2,
+                                       highlightbackground=TEAL_VURGU, height=230)
+        self.vesikalik_kart.pack(fill="x")
+        self.vesikalik_kart.pack_propagate(False)
+        self.vesikalik_label = tk.Label(
+            self.vesikalik_kart, text="Karakter seçin",
+            bg=ZEMIN, fg=METIN_KOYU, font=("Segoe UI", 9))
+        self.vesikalik_label.pack(expand=True)
+
+        self.vesikalik_bilgi = tk.Label(
+            ves_f, text="", bg=KART, fg=METIN_KOYU,
+            font=("Segoe UI", 9), justify="left")
+        self.vesikalik_bilgi.pack(anchor="w", pady=(6, 0))
+
         # Varyasyon önizleme alanı
-        self.onizleme = ttk.Frame(sag, style="Kart.TFrame")
+        self.onizleme = tk.Frame(sag, bg=KART)
         self.onizleme.pack(fill="x", padx=12, pady=(4, 12))
-        ttk.Label(self.onizleme, text="Varyasyonlar (canon seçmek için tıklayın)",
-                  style="Kart.TLabel").pack(anchor="w")
-        self.varyasyon_frame = ttk.Frame(self.onizleme, style="Kart.TFrame")
+        tk.Label(self.onizleme, text="Varyasyonlar (canon seçmek için tıklayın)",
+                 bg=KART, fg=METIN_KOYU, font=("Segoe UI", 9)).pack(anchor="w")
+        self.varyasyon_frame = tk.Frame(self.onizleme, bg=KART)
         self.varyasyon_frame.pack(fill="x", pady=4)
 
     # --- AI persona ---
@@ -184,14 +212,36 @@ class SekmeKisilik(ttk.Frame):
     def _varyasyon_bitti(self, sonuclar):
         self.secili_yuz = sonuclar
         self.yuz_durum.config(text=f"{len(sonuclar)} varyasyon üretildi. Canon seçmek için tıklayın.")
-        # Önizleme butonları
+        # Görsel küçük resimler
         for w in self.varyasyon_frame.winfo_children():
             w.destroy()
-        for i, s in enumerate(sonuclar):
-            ttk.Button(self.varyasyon_frame, text=f"Varyasyon {i+1}",
-                       style="Kart.TButton",
-                       command=lambda yol=s["gorsel_yol"]: self._canon_sec_yuz(yol)
-                       ).pack(side="left", padx=2)
+        try:
+            from PIL import Image, ImageTk
+            for i, s in enumerate(sonuclar):
+                thumb_f = tk.Frame(self.varyasyon_frame, bg=KART, cursor="hand2")
+                thumb_f.pack(side="left", padx=3)
+                try:
+                    img = Image.open(s["gorsel_yol"])
+                    img.thumbnail((70, 93), Image.LANCZOS)
+                    foto = ImageTk.PhotoImage(img)
+                    lbl = tk.Label(thumb_f, image=foto, bg=KART, cursor="hand2")
+                    lbl.image = foto
+                    lbl.pack()
+                except Exception:
+                    lbl = tk.Label(thumb_f, text=f"V{i+1}", bg=KART,
+                                   font=("Segoe UI", 9), width=8, height=3)
+                    lbl.pack()
+                tk.Label(thumb_f, text=f"V{i+1}", bg=KART, fg=METIN_KOYU,
+                         font=("Segoe UI", 8)).pack()
+                yol = s["gorsel_yol"]
+                thumb_f.bind("<Button-1>", lambda e, y=yol: self._canon_sec_yuz(y))
+                lbl.bind("<Button-1>", lambda e, y=yol: self._canon_sec_yuz(y))
+        except Exception:
+            for i, s in enumerate(sonuclar):
+                ttk.Button(self.varyasyon_frame, text=f"Varyasyon {i+1}",
+                           style="Kart.TButton",
+                           command=lambda yol=s["gorsel_yol"]: self._canon_sec_yuz(yol)
+                           ).pack(side="left", padx=2)
 
     def _varyasyon_hata(self, hata):
         self.yuz_durum.config(text=f"Hata: {hata}")
@@ -214,4 +264,49 @@ class SekmeKisilik(ttk.Frame):
                              values=(p["ad"], p["nis"], p["seed"], p["kaynak"]))
 
     def _secim(self, event):
-        pass
+        secili = self.tree.selection()
+        if not secili:
+            return
+        pid = int(secili[0])
+        persona = kisilik.persona_al(pid)
+        if not persona:
+            return
+        # Vesikalık göster
+        kanon = persona.get("kanon_gorsel")
+        if kanon:
+            self._vesikalik_goster(kanon)
+        else:
+            self.vesikalik_label.config(image="", text="Canon yüz yok")
+            self.vesikalik_label.image = None
+        # Bilgi
+        self.vesikalik_bilgi.config(
+            text=f"Ad: {persona['ad']}\nYaş: {persona.get('yas', '?')}\n"
+                 f"Niş: {persona.get('nis', '?')}\n"
+                 f"Seed: {persona.get('seed', '?')}\n"
+                 f"Kaynak: {persona.get('kaynak', 'ai')}")
+
+    def _vesikalik_goster(self, gorsel_yol):
+        try:
+            from PIL import Image, ImageTk
+            img = Image.open(gorsel_yol)
+            w, h = img.size
+            oran = VESIKALIK_BOYUT[0] / VESIKALIK_BOYUT[1]
+            mevcut = w / h
+            if mevcut > oran:
+                yeni_w = int(h * oran)
+                x = (w - yeni_w) // 2
+                img = img.crop((x, 0, x + yeni_w, h))
+            else:
+                yeni_h = int(w / oran)
+                y = (h - yeni_h) // 2
+                img = img.crop((0, y, w, y + yeni_h))
+            img = img.resize(VESIKALIK_BOYUT, Image.LANCZOS)
+            cerceve = Image.new("RGB", (VESIKALIK_BOYUT[0] + 10,
+                                        VESIKALIK_BOYUT[1] + 10), (32, 184, 154))
+            cerceve.paste(img, (5, 5))
+            foto = ImageTk.PhotoImage(cerceve)
+            self.vesikalik_label.config(image=foto, text="")
+            self.vesikalik_label.image = foto
+        except Exception as e:
+            self.vesikalik_label.config(image="", text=f"Hata: {e}")
+            self.vesikalik_label.image = None

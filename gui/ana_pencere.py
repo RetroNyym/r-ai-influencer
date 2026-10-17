@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""AI Influencer — Ana pencere (retro+ R+ paleti)."""
+"""R+ AI Influencer — Premium ana pencere."""
 
 import sys
 import tkinter as tk
@@ -8,37 +8,69 @@ from tkinter import ttk
 
 from gui import sekme_api, sekme_kisilik, sekme_takvim, sekme_uretim
 
-# --- retro+ R+ paleti (logo gradient'inden) ---
-TEAL_KOYU = "#0D4F5C"      # logo sol üst
-TEAL = "#147A7A"           # orta
-TEAL_ACIK = "#1A9E8E"      # sağ alt
-TEAL_VURGU = "#2BB8A0"     # parlak vurgu
-ZEMIN = "#F0F6F5"          # camgöbeği açık zemin
+# --- retro+ premium palet ---
+TEAL_KOYU = "#0A3D47"
+TEAL = "#0F6B6B"
+TEAL_ORTA = "#148A7D"
+TEAL_VURGU = "#20B89A"
+TEAL_PARLAK = "#3DDBB5"
+ZEMIN = "#EDF4F3"
+ZEMIN_KOYU = "#E2ECEA"
 KART = "#FFFFFF"
-CIZGI = "#D5E5E2"
-METIN_KOYU = "#1A2E30"
-METIN_SOLUK = "#6B8A88"
+KART_GOLGE = "#D0DEDC"
+CIZGI = "#C8D8D5"
+METIN_KOYU = "#0F2A2C"
+METIN_SOLUK = "#5A7A78"
 BASLIK_ZEMIN = TEAL_KOYU
-BASLIK_SOLUK = "#8FBFBC"
-YESIL = "#2BB8A0"
-YESIL_KOYU = "#1A9E8E"
-YESIL_METIN = "#0D5C50"
-YESIL_ACIK = "#E0F5F0"
-AMBER = "#F5A623"
-AMBER_ZEMIN = "#FFF4E0"
+BASLIK_SOLUK = "#7AB5AE"
+YESIL = TEAL_VURGU
+YESIL_KOYU = TEAL_ORTA
+YESIL_METIN = "#0A5C4E"
+YESIL_ACIK = "#DFF5EE"
+AMBER = "#F0A830"
+AMBER_KOYU = "#C07800"
+AMBER_ZEMIN = "#FFF6E5"
 
 VARLIK = Path(__file__).resolve().parent.parent / "varlik"
+
+FONT_BASLIK = ("Segoe UI", 18, "bold")
+FONT_ALT = ("Segoe UI", 9)
+FONT_KART_BASLIK = ("Segoe UI", 12, "bold")
+FONT_NORMAL = ("Segoe UI", 10)
+FONT_KUCUK = ("Segoe UI", 9)
+FONT_BUTON = ("Segoe UI", 10, "bold")
+
+
+def varlik_foto(ad, boyut=None):
+    """varlik/ klasöründen foto yükle."""
+    try:
+        from PIL import Image, ImageTk
+        yol = VARLIK / ad
+        if not yol.is_file():
+            return None
+        img = Image.open(yol)
+        if boyut:
+            img = img.resize(boyut, Image.LANCZOS)
+        return ImageTk.PhotoImage(img)
+    except Exception:
+        return None
+
+
+class PremiumFrame(tk.Frame):
+    """Gölgeli kart çerçevesi."""
+    def __init__(self, parent, bg=KART, **kw):
+        super().__init__(parent, bg=KART, highlightthickness=1,
+                         highlightbackground=CIZGI, **kw)
 
 
 class AnaPencere(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("R+ AI Influencer Otomasyonu")
-        self.geometry("1180x780")
-        self.minsize(1000, 680)
+        self.geometry("1280x820")
+        self.minsize(1100, 720)
         self.configure(bg=ZEMIN)
 
-        # Pencere ikonu
         ico = VARLIK / "retro-logo.ico"
         if ico.is_file():
             try:
@@ -46,7 +78,7 @@ class AnaPencere(tk.Tk):
             except Exception:
                 pass
 
-        self._foto_yukle()
+        self._foto_on_yukle()
         self._stil_kur()
         self._baslik_cubugu()
         self._sekmeler()
@@ -54,108 +86,110 @@ class AnaPencere(tk.Tk):
 
         self.protocol("WM_DELETE_WINDOW", self._kapat)
 
-    def _foto_yukle(self):
-        """R+ logosu ve sosyal medya ikonlarını yükler."""
-        self._logo_foto = None
-        self._ig_foto = None
-        self._tt_foto = None
-        try:
-            from PIL import Image, ImageTk
-            logo_yol = VARLIK / "retro-logo.png"
-            if logo_yol.is_file():
-                img = Image.open(logo_yol).resize((48, 48), Image.LANCZOS)
-                self._logo_foto = ImageTk.PhotoImage(img)
-            for anahtar, dosya in [("_ig_foto", "ig.png"), ("_tt_foto", "tt.png")]:
-                yol = VARLIK / dosya
-                if yol.is_file():
-                    img = Image.open(yol).resize((20, 20), Image.LANCZOS)
-                    setattr(self, anahtar, ImageTk.PhotoImage(img))
-        except Exception:
-            pass
+    def _foto_on_yukle(self):
+        self._logo = varlik_foto("retro-logo.png", (52, 52))
+        self._ig = varlik_foto("ig.png", (22, 22))
+        self._tt = varlik_foto("tt.png", (22, 22))
 
     def _stil_kur(self):
-        style = ttk.Style(self)
-        style.theme_use("clam")
+        s = ttk.Style(self)
+        s.theme_use("clam")
 
-        style.configure("Baslik.TFrame", background=BASLIK_ZEMIN)
-        style.configure("Govde.TFrame", background=ZEMIN)
-        style.configure("Kart.TFrame", background=KART, relief="flat")
-        style.configure("Teal.TFrame", background=TEAL, relief="flat")
+        s.configure("Baslik.TFrame", background=BASLIK_ZEMIN)
+        s.configure("Govde.TFrame", background=ZEMIN)
+        s.configure("Kart.TFrame", background=KART)
+        s.configure("KartVurgu.TFrame", background=YESIL_ACIK)
 
-        style.configure("Baslik.TLabel", background=BASLIK_ZEMIN,
-                        foreground="#FFFFFF", font=("Segoe UI", 17, "bold"))
-        style.configure("AltBaslik.TLabel", background=BASLIK_ZEMIN,
-                        foreground=BASLIK_SOLUK, font=("Segoe UI", 9))
-        style.configure("Govde.TLabel", background=ZEMIN,
-                        foreground=METIN_KOYU, font=("Segoe UI", 10))
-        style.configure("Kart.TLabel", background=KART,
-                        foreground=METIN_KOYU, font=("Segoe UI", 10))
-        style.configure("Vurgu.TLabel", background=KART,
-                        foreground=TEAL_KOYU, font=("Segoe UI", 10, "bold"))
-        style.configure("VurguGovde.TLabel", background=ZEMIN,
-                        foreground=TEAL_KOYU, font=("Segoe UI", 10, "bold"))
-        style.configure("Hata.TLabel", background=KART,
-                        foreground="#B00020", font=("Segoe UI", 9))
-        style.configure("Amber.TLabel", background=AMBER_ZEMIN,
-                        foreground="#8A5200", font=("Segoe UI", 9))
+        s.configure("Baslik.TLabel", background=BASLIK_ZEMIN,
+                    foreground="#FFFFFF", font=FONT_BASLIK)
+        s.configure("AltBaslik.TLabel", background=BASLIK_ZEMIN,
+                    foreground=BASLIK_SOLUK, font=FONT_ALT)
+        s.configure("Govde.TLabel", background=ZEMIN,
+                    foreground=METIN_KOYU, font=FONT_NORMAL)
+        s.configure("Kart.TLabel", background=KART,
+                    foreground=METIN_KOYU, font=FONT_NORMAL)
+        s.configure("KartKucuk.TLabel", background=KART,
+                    foreground=METIN_SOLUK, font=FONT_KUCUK)
+        s.configure("Vurgu.TLabel", background=KART,
+                    foreground=TEAL_KOYU, font=FONT_KART_BASLIK)
+        s.configure("VurguGovde.TLabel", background=ZEMIN,
+                    foreground=TEAL_KOYU, font=FONT_KART_BASLIK)
+        s.configure("BaslikBeyaz.TLabel", background=BASLIK_ZEMIN,
+                    foreground="#FFFFFF", font=FONT_KART_BASLIK)
+        s.configure("Hata.TLabel", background=KART,
+                    foreground="#C62828", font=FONT_KUCUK)
+        s.configure("Basari.TLabel", background=KART,
+                    foreground=TEAL_VURGU, font=("Segoe UI", 10, "bold"))
 
-        style.configure("Yesil.TButton", background=TEAL_VURGU, foreground="#FFFFFF",
-                        font=("Segoe UI", 10, "bold"), padding=(12, 6))
-        style.map("Yesil.TButton",
-                  background=[("active", TEAL_ACIK), ("disabled", "#CCCCCC")],
-                  foreground=[("disabled", "#888888")])
+        # Butonlar
+        s.configure("Yesil.TButton", background=TEAL_VURGU, foreground="#FFFFFF",
+                    font=FONT_BUTON, padding=(16, 8), borderwidth=0)
+        s.map("Yesil.TButton",
+              background=[("active", TEAL_PARLAK), ("pressed", TEAL_ORTA),
+                          ("disabled", "#B0C4C0")],
+              foreground=[("disabled", "#6A8A88")])
 
-        style.configure("Kart.TButton", background=KART, foreground=METIN_KOYU,
-                        font=("Segoe UI", 10), padding=(10, 5))
-        style.map("Kart.TButton", background=[("active", YESIL_ACIK)])
+        s.configure("Kart.TButton", background=KART, foreground=METIN_KOYU,
+                    font=FONT_NORMAL, padding=(12, 6), borderwidth=1,
+                    relief="solid", bordercolor=CIZGI)
+        s.map("Kart.TButton",
+              background=[("active", YESIL_ACIK), ("pressed", "#C8EBE0")])
 
-        style.configure("Teal.TButton", background=TEAL, foreground="#FFFFFF",
-                        font=("Segoe UI", 10), padding=(10, 5))
-        style.map("Teal.TButton", background=[("active", TEAL_ACIK)])
+        s.configure("Teal.TButton", background=TEAL, foreground="#FFFFFF",
+                    font=FONT_NORMAL, padding=(12, 6), borderwidth=0)
+        s.map("Teal.TButton", background=[("active", TEAL_ORTA)])
 
-        style.configure("Notebook.TNotebook", background=ZEMIN, borderwidth=0)
-        style.configure("Notebook.TNotebook.Tab", background=KART,
-                        foreground=METIN_KOYU, padding=(18, 9),
-                        font=("Segoe UI", 10, "bold"))
-        style.map("Notebook.TNotebook.Tab",
-                  background=[("selected", TEAL_VURGU)],
-                  foreground=[("selected", "#FFFFFF")])
+        s.configure("Tehlike.TButton", background="#E85D5D", foreground="#FFFFFF",
+                    font=FONT_NORMAL, padding=(12, 6), borderwidth=0)
+        s.map("Tehlike.TButton", background=[("active", "#D14343")])
 
-        style.configure("TProgressbar", troughcolor=CIZGI,
-                        background=TEAL_VURGU, thickness=14)
+        # Notebook
+        s.configure("Notebook.TNotebook", background=ZEMIN, borderwidth=0)
+        s.configure("Notebook.TNotebook.Tab", background=KART,
+                    foreground=METIN_SOLUK, padding=(20, 10),
+                    font=("Segoe UI", 10, "bold"), borderwidth=0)
+        s.map("Notebook.TNotebook.Tab",
+              background=[("selected", TEAL_VURGU)],
+              foreground=[("selected", "#FFFFFF")])
 
-        style.configure("Treeview", background=KART, fieldbackground=KART,
-                        foreground=METIN_KOYU, rowheight=26,
-                        font=("Segoe UI", 9))
-        style.configure("Treeview.Heading", background=TEAL, foreground="#FFFFFF",
-                        font=("Segoe UI", 9, "bold"))
-        style.map("Treeview", background=[("selected", TEAL_VURGU)],
-                  foreground=[("selected", "#FFFFFF")])
+        s.configure("TProgressbar", troughcolor=ZEMIN_KOYU,
+                    background=TEAL_VURGU, thickness=16)
+
+        s.configure("Treeview", background=KART, fieldbackground=KART,
+                    foreground=METIN_KOYU, rowheight=30,
+                    font=("Segoe UI", 10), borderwidth=0)
+        s.configure("Treeview.Heading", background=TEAL, foreground="#FFFFFF",
+                    font=("Segoe UI", 10, "bold"), borderwidth=0)
+        s.map("Treeview",
+              background=[("selected", TEAL_VURGU)],
+              foreground=[("selected", "#FFFFFF")])
+
+        s.configure("Horizontal.TScale", background=ZEMIN, troughcolor=CIZGI)
 
     def _baslik_cubugu(self):
-        bar = tk.Frame(self, bg=BASLIK_ZEMIN, height=72)
+        bar = tk.Frame(self, bg=BASLIK_ZEMIN, height=76)
         bar.pack(fill="x")
         bar.pack_propagate(False)
 
-        # R+ logosu
-        if self._logo_foto:
-            lbl_logo = tk.Label(bar, image=self._logo_foto, bg=BASLIK_ZEMIN)
-            lbl_logo.pack(side="left", padx=(18, 10), pady=12)
-
         sol = tk.Frame(bar, bg=BASLIK_ZEMIN)
-        sol.pack(side="left", pady=10)
-        tk.Label(sol, text="R+ AI Influencer", bg=BASLIK_ZEMIN,
-                 fg="#FFFFFF", font=("Segoe UI", 17, "bold")).pack(anchor="w")
-        tk.Label(sol, text="retro+  ·  Ücretsiz sanal influencer üretim & paylaşım",
-                 bg=BASLIK_ZEMIN, fg=BASLIK_SOLUK,
-                 font=("Segoe UI", 9)).pack(anchor="w")
+        sol.pack(side="left", padx=20, pady=12)
 
-        # Sağ: rozet
-        sag = tk.Frame(bar, bg=BASLIK_ZEMIN)
-        sag.pack(side="right", padx=18)
-        tk.Label(sag, text="R+", bg=TEAL_VURGU, fg="#FFFFFF",
-                 font=("Segoe UI", 14, "bold"), width=4, height=1,
-                 relief="flat").pack()
+        if self._logo:
+            lbl_logo = tk.Label(sol, image=self._logo, bg=BASLIK_ZEMIN)
+            lbl_logo.pack(side="left", padx=(0, 12))
+
+        metin = tk.Frame(sol, bg=BASLIK_ZEMIN)
+        metin.pack(side="left", pady=4)
+        tk.Label(metin, text="R+ AI Influencer", bg=BASLIK_ZEMIN,
+                 fg="#FFFFFF", font=FONT_BASLIK).pack(anchor="w")
+        tk.Label(metin, text="retro+  ·  Premium sanal influencer stüdyosu",
+                 bg=BASLIK_ZEMIN, fg=BASLIK_SOLUK, font=FONT_ALT).pack(anchor="w")
+
+        # Sağ rozet
+        rozet = tk.Frame(bar, bg=BASLIK_ZEMIN)
+        rozet.pack(side="right", padx=20)
+        tk.Label(rozet, text="R+", bg=TEAL_VURGU, fg="#FFFFFF",
+                 font=("Segoe UI", 16, "bold"), width=5, height=1).pack()
 
         # Gradient şerit
         serit = tk.Frame(self, bg=TEAL_VURGU, height=3)
@@ -163,14 +197,14 @@ class AnaPencere(tk.Tk):
 
     def _sekmeler(self):
         self.notebook = ttk.Notebook(self, style="Notebook.TNotebook")
-        self.notebook.pack(fill="both", expand=True, padx=12, pady=(8, 0))
+        self.notebook.pack(fill="both", expand=True, padx=14, pady=(10, 0))
 
         self.sekme_kisilik = sekme_kisilik.SekmeKisilik(self.notebook)
         self.sekme_uretim = sekme_uretim.SekmeUretim(self.notebook)
         self.sekme_takvim = sekme_takvim.SekmeTakvim(self.notebook)
         self.sekme_api = sekme_api.SekmeApi(self.notebook,
-                                            ig_foto=self._ig_foto,
-                                            tt_foto=self._tt_foto)
+                                            ig_foto=self._ig,
+                                            tt_foto=self._tt)
 
         self.notebook.add(self.sekme_kisilik, text="  Karakter  ")
         self.notebook.add(self.sekme_uretim, text="  Üretim & Onay  ")
@@ -178,13 +212,12 @@ class AnaPencere(tk.Tk):
         self.notebook.add(self.sekme_api, text="  API & Bağlantılar  ")
 
     def _durum_cubugu(self):
-        self.durum = tk.StringVar(value="Hazır  ·  retro+")
-        bar = tk.Frame(self, bg=TEAL_KOYU, height=28)
+        bar = tk.Frame(self, bg=BASLIK_ZEMIN, height=30)
         bar.pack(fill="x", side="bottom")
         bar.pack_propagate(False)
-        tk.Label(bar, textvariable=self.durum, bg=TEAL_KOYU,
-                 fg=BASLIK_SOLUK, anchor="w",
-                 font=("Segoe UI", 9)).pack(fill="x", padx=16, pady=4)
+        tk.Label(bar, text="  R+ v1.0  ·  retro+ premium  ·  MIT License",
+                 bg=BASLIK_ZEMIN, fg=BASLIK_SOLUK, anchor="w",
+                 font=("Segoe UI", 9)).pack(fill="x", padx=16, pady=5)
 
     def _kapat(self):
         try:
