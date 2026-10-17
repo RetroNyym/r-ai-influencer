@@ -70,7 +70,7 @@ print(f"  Kuyruk: {oncesi} -> {sonrasi} (beklenen +1)")
 kaydet("premium_02_karakter_kuyruk.png")
 
 # 3) Uretim & Onay — kuyruktaki yeni satir + alt barda vesikalik
-app.notebook.select(1)
+app.sayfa_degistir("uretim")
 app.update()
 time.sleep(0.4)
 uretim_sekme = app.sekme_uretim
@@ -86,13 +86,13 @@ if uretim_sekme.tree.get_children():
 kaydet("premium_03_uretim_altbar.png")
 
 # 4) Video sekmesi
-app.notebook.select(2)
+app.sayfa_degistir("video")
 app.update()
 time.sleep(0.3)
 kaydet("premium_04_video.png")
 
 # 5) Yayın & Analiz
-app.notebook.select(3)
+app.sayfa_degistir("yayin")
 app.update()
 time.sleep(0.3)
 yayin_sekme = app.sekme_yayin
@@ -103,19 +103,19 @@ if yayin_sekme.tree.get_children():
 kaydet("premium_05_yayin.png")
 
 # 6) Takvim
-app.notebook.select(4)
+app.sayfa_degistir("takvim")
 app.update()
 time.sleep(0.3)
 kaydet("premium_06_takvim.png")
 
 # 7) API
-app.notebook.select(5)
+app.sayfa_degistir("api")
 app.update()
 time.sleep(0.3)
 kaydet("premium_07_api.png")
 
 # 8) Araçlar
-app.notebook.select(6)
+app.sayfa_degistir("arac")
 app.update()
 time.sleep(0.3)
 kaydet("premium_08_arac.png")

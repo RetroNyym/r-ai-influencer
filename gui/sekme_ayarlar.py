@@ -6,15 +6,8 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from core import depolama
-
-ZEMIN = "#F0F6F5"
-KART = "#FFFFFF"
-TEAL_KOYU = "#0D4F5C"
-TEAL = "#147A7A"
-TEAL_VURGU = "#2BB8A0"
-YESIL_ACIK = "#E0F5F0"
-METIN_KOYU = "#1A2E30"
-CIZGI = "#D5E5E2"
+from gui.palet import (CIZGI, KART, METIN_KOYU, TEAL, TEAL_KOYU,
+                       TEAL_VURGU, YESIL_ACIK, ZEMIN)
 
 
 class SekmeAyarlar(ttk.Frame):
@@ -105,28 +98,28 @@ class SekmeAyarlar(ttk.Frame):
 
         # --- Kaydet ---
         tk.Frame(self.icerik, bg=KART, height=8).pack(fill="x")
-        btn_kaydet = tk.Frame(self.icerik, bg=TEAL_KOYU, height=56)
+        btn_kaydet = tk.Frame(self.icerik, bg=TEAL, height=56)
         btn_kaydet.pack(fill="x")
         btn_kaydet.pack_propagate(False)
         ttk.Button(btn_kaydet, text="Ayarları Kaydet", style="Yesil.TButton",
                    command=self._kaydet).pack(pady=12)
 
     def _kart_baslik(self, metin):
-        f = tk.Frame(self.icerik, bg=TEAL_KOYU, height=38)
+        f = tk.Frame(self.icerik, bg=TEAL, height=38)
         f.pack(fill="x")
         f.pack_propagate(False)
-        tk.Label(f, text="  " + metin, bg=TEAL_KOYU, fg="#FFFFFF",
+        tk.Label(f, text="  " + metin, bg=TEAL, fg="#FFFFFF",
                  font=("Segoe UI", 11, "bold"), anchor="w").pack(
             side="left", fill="y")
 
     def _platform_kart(self, metin, foto, renk, rozet):
         """Sosyal medya logosu + başlık kartı."""
-        f = tk.Frame(self.icerik, bg=TEAL_KOYU, height=42)
+        f = tk.Frame(self.icerik, bg=TEAL, height=42)
         f.pack(fill="x")
         f.pack_propagate(False)
 
         if foto:
-            lbl = tk.Label(f, image=foto, bg=TEAL_KOYU)
+            lbl = tk.Label(f, image=foto, bg=TEAL)
             lbl.pack(side="left", padx=(14, 6), pady=8)
         else:
             # Logo yoksa renkli rozet
@@ -134,7 +127,7 @@ class SekmeAyarlar(ttk.Frame):
                      font=("Segoe UI", 10, "bold"), width=3, height=1,
                      relief="flat").pack(side="left", padx=(14, 6), pady=8)
 
-        tk.Label(f, text=metin, bg=TEAL_KOYU, fg="#FFFFFF",
+        tk.Label(f, text=metin, bg=TEAL, fg="#FFFFFF",
                  font=("Segoe UI", 11, "bold"), anchor="w").pack(
             side="left", fill="y")
 

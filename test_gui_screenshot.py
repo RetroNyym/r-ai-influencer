@@ -36,19 +36,19 @@ def ekran_kaydet(isim):
 ekran_kaydet("gui_01_karakter.png")
 
 # 2) Uretim sekmesi
-app.notebook.select(1)
+app.sayfa_degistir("uretim")
 app.update()
 time.sleep(0.2)
 ekran_kaydet("gui_02_uretim.png")
 
 # 3) Takvim sekmesi
-app.notebook.select(2)
+app.sayfa_degistir("takvim")
 app.update()
 time.sleep(0.2)
 ekran_kaydet("gui_03_takvim.png")
 
-# 4) Ayarlar sekmesi (IG/TT logolari)
-app.notebook.select(3)
+# 4) API sekmesi (IG/TT logolari)
+app.sayfa_degistir("api")
 app.update()
 time.sleep(0.2)
 ekran_kaydet("gui_04_ayarlar.png")

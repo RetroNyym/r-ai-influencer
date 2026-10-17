@@ -17,8 +17,8 @@ app = AnaPencere()
 app.update_idletasks()
 app.update()
 
-# API sekmesi (index 3)
-app.notebook.select(3)
+# API sekmesi
+app.sayfa_degistir("api")
 app.update()
 time.sleep(0.3)
 

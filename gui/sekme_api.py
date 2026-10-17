@@ -6,15 +6,8 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from core import api_yonetici, depolama
-
-ZEMIN = "#F0F6F5"
-KART = "#FFFFFF"
-TEAL_KOYU = "#0D4F5C"
-TEAL_VURGU = "#2BB8A0"
-YESIL_ACIK = "#E0F5F0"
-METIN_KOYU = "#1A2E30"
-AMBER_ZEMIN = "#FFF4E0"
-AMBER = "#F5A623"
+from gui.palet import (AMBER, AMBER_ZEMIN, KART, METIN_KOYU, TEAL,
+                       TEAL_KOYU, TEAL_VURGU, YESIL_ACIK, ZEMIN)
 
 
 class SekmeApi(ttk.Frame):
@@ -77,7 +70,7 @@ class SekmeApi(ttk.Frame):
         self.tanima_label = tk.Label(
             self.tanima_frame,
             text="💡 Anahtarı yapıştırın — API otomatik tanınacak",
-            bg=AMBER_ZEMIN, fg="#8A5200", font=("Segoe UI", 10, "bold"),
+            bg=AMBER_ZEMIN, fg=AMBER, font=("Segoe UI", 10, "bold"),
             anchor="w", padx=8, pady=6)
         self.tanima_label.pack(fill="x")
 
@@ -161,30 +154,30 @@ class SekmeApi(ttk.Frame):
 
         # Kaydet alt
         tk.Frame(self.icerik, bg=KART, height=8).pack(fill="x")
-        btn_kaydet = tk.Frame(self.icerik, bg=TEAL_KOYU, height=52)
+        btn_kaydet = tk.Frame(self.icerik, bg=TEAL, height=52)
         btn_kaydet.pack(fill="x")
         btn_kaydet.pack_propagate(False)
         ttk.Button(btn_kaydet, text="Tüm Ayarları Kaydet", style="Yesil.TButton",
                    command=self._kaydet_tumu).pack(pady=10)
 
     def _kart_baslik(self, metin):
-        f = tk.Frame(self.icerik, bg=TEAL_KOYU, height=38)
+        f = tk.Frame(self.icerik, bg=TEAL, height=38)
         f.pack(fill="x")
         f.pack_propagate(False)
-        tk.Label(f, text="  " + metin, bg=TEAL_KOYU, fg="#FFFFFF",
+        tk.Label(f, text="  " + metin, bg=TEAL, fg="#FFFFFF",
                  font=("Segoe UI", 11, "bold"), anchor="w").pack(side="left", fill="y")
 
     def _platform_kart(self, metin, foto, renk, rozet):
-        f = tk.Frame(self.icerik, bg=TEAL_KOYU, height=42)
+        f = tk.Frame(self.icerik, bg=TEAL, height=42)
         f.pack(fill="x")
         f.pack_propagate(False)
         if foto:
-            tk.Label(f, image=foto, bg=TEAL_KOYU).pack(side="left", padx=(14, 6), pady=8)
+            tk.Label(f, image=foto, bg=TEAL).pack(side="left", padx=(14, 6), pady=8)
         else:
             tk.Label(f, text=rozet, bg=renk, fg="#FFFFFF",
                      font=("Segoe UI", 10, "bold"), width=3, height=1,
                      relief="flat").pack(side="left", padx=(14, 6), pady=8)
-        tk.Label(f, text=metin, bg=TEAL_KOYU, fg="#FFFFFF",
+        tk.Label(f, text=metin, bg=TEAL, fg="#FFFFFF",
                  font=("Segoe UI", 11, "bold"), anchor="w").pack(side="left", fill="y")
 
     def _alan(self, anahtar, etiket, ipucu, frame=None):

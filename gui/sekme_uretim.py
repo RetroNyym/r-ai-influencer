@@ -6,16 +6,9 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from core import depolama, kisilik
+from gui.palet import (CIZGI, KART, METIN_KOYU, METIN_SOLUK, TEAL_KOYU,
+                       TEAL_PARLAK, TEAL_VURGU, YESIL_ACIK, ZEMIN)
 
-ZEMIN = "#EDF4F3"
-KART = "#FFFFFF"
-CIZGI = "#C8D8D5"
-METIN_KOYU = "#0F2A2C"
-METIN_SOLUK = "#5A7A78"
-TEAL_KOYU = "#0A3D47"
-TEAL_VURGU = "#20B89A"
-TEAL_PARLAK = "#3DDBB5"
-YESIL_ACIK = "#DFF5EE"
 VESIKALIK_BOYUT = (180, 240)  # 3:4 vesikalık oranı
 
 

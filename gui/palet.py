@@ -1,35 +1,39 @@
 # -*- coding: utf-8 -*-
-"""Ortak premium palet + vesikalık foto yardımcısı.
+"""Ortak ultra-premium DARK palet + vesikalık foto yardımcısı.
 
 Not: Bu modül gui.ana_pencere'yi import ETMEMELİ (döngüsel import yok).
+Değişken ADLARI açık temadan devralınmıştır; değerler gece laciverti /
+antrasit / turkuaz karanlık temaya göre tanımlıdır.
 """
 
 from pathlib import Path
 
 VARLIK = Path(__file__).resolve().parent.parent / "varlik"
 
-# --- retro+ premium palet ---
-TEAL_KOYU = "#0A3D47"
-TEAL = "#0F6B6B"
-TEAL_ORTA = "#148A7D"
-TEAL_VURGU = "#20B89A"
-TEAL_PARLAK = "#3DDBB5"
-ZEMIN = "#EDF4F3"
-ZEMIN_KOYU = "#E2ECEA"
-KART = "#FFFFFF"
-KART_GOLGE = "#D0DEDC"
-CIZGI = "#C8D8D5"
-METIN_KOYU = "#0F2A2C"
-METIN_SOLUK = "#5A7A78"
-BASLIK_ZEMIN = TEAL_KOYU
-BASLIK_SOLUK = "#7AB5AE"
+# --- retro+ ultra premium dark palet ---
+SIDEBAR = "#0B1424"        # sidebar / üst bar / alt bar zemini
+ZEMIN = "#0A1220"          # sayfa zemini (gece laciverti)
+ZEMIN_KOYU = "#070C18"     # daha koyu zemin (trough, scroll alanı)
+KART = "#131C2E"           # antrasit panel / kart zemini
+KART_GOLGE = "#1A2540"     # kart kenarı / gölge
+CIZGI = "#243149"          # ince kenarlık
+METIN_KOYU = "#E8EEF9"     # ana metin (açık lacivert-beyaz)
+METIN_SOLUK = "#8A9AB8"    # soluk/ikincil metin
+TEAL_KOYU = "#3FD9BE"      # başlık/vurgu rengi (parlak turkuaz)
+TEAL = "#0F766E"           # koyu turkuaz (beyaz metinli rozet/buton zemini)
+TEAL_ORTA = "#148A7D"      # orta turkuaz (pressed)
+TEAL_VURGU = "#20B89A"     # vurgu (yesil buton, seçili satır)
+TEAL_PARLAK = "#3DDBB5"    # parlak (hover)
+BASLIK_ZEMIN = "#0B1424"   # başlık/çubuk zemini (navy)
+BASLIK_SOLUK = "#7A8CA8"   # çubuk üzerinde soluk metin
 YESIL = TEAL_VURGU
 YESIL_KOYU = TEAL_ORTA
-YESIL_METIN = "#0A5C4E"
-YESIL_ACIK = "#DFF5EE"
+YESIL_METIN = "#5FE3C0"    # koyu yeşil zemin üzerinde parlak metin
+YESIL_ACIK = "#12312B"     # koyu yeşil vurgu zemini (ipucu/aktif)
 AMBER = "#F0A830"
 AMBER_KOYU = "#C07800"
-AMBER_ZEMIN = "#FFF6E5"
+AMBER_ZEMIN = "#2E2415"    # koyu amber vurgu zemini
+HATA = "#FF6B6B"           # hata metni (dark zeminde okunur)
 
 VESIKALIK_ORAN = 3 / 4  # 3:4 vesikalık oranı
 

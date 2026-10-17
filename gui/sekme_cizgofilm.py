@@ -12,8 +12,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from core import animasyon, kisilik
-from gui.palet import (CIZGI, KART, METIN_KOYU, METIN_SOLUK, TEAL_KOYU,
-                       TEAL_VURGU, ZEMIN)
+from gui.palet import (CIZGI, HATA, KART, METIN_KOYU, METIN_SOLUK,
+                       TEAL_KOYU, TEAL_VURGU, ZEMIN)
 
 STILLER = [("Pixar 3D", "pixar"), ("Anime", "anime"),
            ("2D Cartoon", "cartoon"), ("Watercolor", "watercolor"),
@@ -74,7 +74,14 @@ class SekmeCizgiFilm(ttk.Frame):
                   style="Kart.TLabel",
                   font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=16,
                                                       pady=(10, 2))
-        self.sahne = tk.Text(sol, height=6, width=44, font=("Segoe UI", 10))
+        self.sahne = tk.Text(sol, height=6, width=44, font=("Segoe UI", 10),
+                             bg=ZEMIN, fg=METIN_KOYU,
+                             insertbackground=METIN_KOYU,
+                             selectbackground=TEAL_VURGU,
+                             selectforeground="#FFFFFF",
+                             relief="solid", bd=0,
+                             highlightthickness=1,
+                             highlightbackground=CIZGI)
         self.sahne.pack(fill="x", padx=16)
         self.sahne.insert("1.0",
                           "otantik bir kahve dükkanında latte yapan karakter,\n"
@@ -203,4 +210,4 @@ class SekmeCizgiFilm(ttk.Frame):
             self.after(0, lambda: self._hata(str(e)))
 
     def _hata(self, hata):
-        self.durum.config(text=f"Hata: {hata}", fg="#C62828")
+        self.durum.config(text=f"Hata: {hata}", fg=HATA)

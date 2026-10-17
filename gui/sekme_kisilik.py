@@ -6,15 +6,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from core import depolama, kisilik, sahne_kutuphanesi
-
-ZEMIN = "#EDF4F3"
-KART = "#FFFFFF"
-CIZGI = "#C8D8D5"
-METIN_KOYU = "#0F2A2C"
-TEAL_KOYU = "#0A3D47"
-TEAL_VURGU = "#20B89A"
-YESIL = "#20B89A"
-YESIL_ACIK = "#DFF5EE"
+from gui.palet import (CIZGI, KART, METIN_KOYU, METIN_SOLUK, TEAL, TEAL_KOYU,
+                       TEAL_VURGU, YESIL, YESIL_ACIK, ZEMIN, vesikalik_foto)
 
 
 class SekmeKisilik(ttk.Frame):
@@ -134,18 +127,48 @@ class SekmeKisilik(ttk.Frame):
         self.tree.pack(side="left", fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self._secim)
 
-        # Karakter bilgi paneli
-        bilgi_f = tk.Frame(liste_f, bg=KART, width=220)
+        # Karakter bilgi paneli → profesyonel profil kartı
+        bilgi_f = tk.Frame(liste_f, bg=KART, width=250,
+                           highlightthickness=1, highlightbackground=CIZGI)
         bilgi_f.pack(side="right", fill="y", padx=(10, 0))
         bilgi_f.pack_propagate(False)
 
-        tk.Label(bilgi_f, text="Karakter Bilgisi", bg=KART, fg=TEAL_KOYU,
-                 font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(0, 4))
+        tk.Label(bilgi_f, text="Karakter Profili", bg=KART, fg=TEAL_KOYU,
+                 font=("Segoe UI", 11, "bold")).pack(
+            anchor="w", padx=12, pady=(12, 6))
 
-        self.bilgi_label = tk.Label(
-            bilgi_f, text="Karakter seçin", bg=KART, fg=METIN_KOYU,
-            font=("Segoe UI", 9), justify="left", anchor="nw")
-        self.bilgi_label.pack(fill="both", expand=True, anchor="w")
+        ust_profil = tk.Frame(bilgi_f, bg=KART)
+        ust_profil.pack(fill="x", padx=12)
+        self.profil_foto = tk.Label(ust_profil, text="👤", bg=ZEMIN,
+                                    fg=METIN_SOLUK, width=8, height=5,
+                                    font=("Segoe UI", 20),
+                                    highlightthickness=1,
+                                    highlightbackground=CIZGI)
+        self.profil_foto.pack(side="left")
+        sag_profil = tk.Frame(ust_profil, bg=KART)
+        sag_profil.pack(side="left", fill="x", expand=True, padx=(10, 0))
+        self.profil_ad = tk.Label(sag_profil, text="Seçilmedi", bg=KART,
+                                  fg=METIN_KOYU, font=("Segoe UI", 13, "bold"),
+                                  anchor="w")
+        self.profil_ad.pack(anchor="w")
+        self.profil_rozet = tk.Label(sag_profil, text=" TASLAK ", bg=TEAL,
+                                     fg="#FFFFFF", font=("Segoe UI", 8, "bold"),
+                                     padx=5, pady=2)
+        self.profil_rozet.pack(anchor="w", pady=(4, 0))
+
+        ttk.Separator(bilgi_f).pack(fill="x", padx=12, pady=8)
+        self.profil_satirlar = tk.Frame(bilgi_f, bg=KART)
+        self.profil_satirlar.pack(fill="x", padx=12)
+
+        tk.Label(bilgi_f, text="KİŞİLİK", bg=KART, fg=METIN_SOLUK,
+                 font=("Segoe UI", 8, "bold"), anchor="w").pack(
+            fill="x", padx=12, pady=(10, 2))
+        self.profil_kisilik = tk.Label(
+            bilgi_f, text="—", bg=KART, fg=METIN_SOLUK,
+            font=("Segoe UI", 9), justify="left", anchor="nw",
+            wraplength=220)
+        self.profil_kisilik.pack(fill="both", expand=True, padx=12,
+                                 pady=(0, 12))
 
         # Varyasyon önizleme alanı
         self.onizleme = tk.Frame(sag, bg=KART)
@@ -354,14 +377,54 @@ class SekmeKisilik(ttk.Frame):
         if not persona:
             return
         self._varyasyon_pid = pid
-        # Bilgi
+        # Profil kartı
         kanon = persona.get("kanon_gorsel")
-        self.bilgi_label.config(
-            text=f"Ad: {persona['ad']}\nYaş: {persona.get('yas', '?')}\n"
-                 f"Niş: {persona.get('nis', '?')}\n"
-                 f"Seed: {persona.get('seed', '?')}\n"
-                 f"Kaynak: {persona.get('kaynak', 'ai')}\n"
-                 f"Canon: {'Var' if kanon else 'Yok'}")
+        kilitli = bool(persona.get("kimlik_embedding"))
+        self.profil_ad.config(text=persona.get("ad", "?"))
+        if kilitli and kanon:
+            self.profil_rozet.config(text="  KİMLİK KİLİTLİ  ",
+                                     bg=YESIL, fg="#062018")
+        elif kanon:
+            self.profil_rozet.config(text="  CANON  ", bg=TEAL_KOYU,
+                                     fg="#062018")
+        else:
+            self.profil_rozet.config(text="  TASLAK  ", bg=METIN_SOLUK,
+                                     fg=KART)
+        for w in self.profil_satirlar.winfo_children():
+            w.destroy()
+        satirlar = [
+            ("Seed", str(persona.get("seed", "—"))),
+            ("Niş", str(persona.get("nis", "—"))),
+            ("Yaş", str(persona.get("yas", "—"))),
+            ("Kaynak", str(persona.get("kaynak", "ai"))),
+            ("Yüz Tutarlılığı",
+             "Kilitli ✓" if kilitli else "Kilitli değil"),
+        ]
+        for etiket, deger in satirlar:
+            r = tk.Frame(self.profil_satirlar, bg=KART)
+            r.pack(fill="x", pady=2)
+            tk.Label(r, text=etiket, bg=KART, fg=METIN_SOLUK,
+                     font=("Segoe UI", 9), width=13, anchor="w").pack(
+                side="left")
+            renk = TEAL_KOYU if etiket == "Yüz Tutarlılığı" else METIN_KOYU
+            tk.Label(r, text=deger, bg=KART, fg=renk,
+                     font=("Segoe UI", 9, "bold"), anchor="w").pack(
+                side="left")
+        self.profil_kisilik.config(
+            text=f"{persona.get('kisilik', '—')}\n\n"
+                 f"Marka sesi: {persona.get('marka_sesi', '—')}")
+        try:
+            if kanon:
+                foto = vesikalik_foto(kanon, boyut=(74, 98))
+                self.profil_foto.config(image=foto, text="",
+                                        width=0, height=0)
+                self.profil_foto.image = foto
+            else:
+                self.profil_foto.config(image="", text="👤",
+                                        width=8, height=5)
+                self.profil_foto.image = None
+        except Exception:
+            pass
         self._bar_bildir(persona)
 
     def _bar_bildir(self, persona):

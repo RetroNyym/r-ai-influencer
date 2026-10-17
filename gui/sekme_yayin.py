@@ -123,7 +123,7 @@ class SekmeYayin(ttk.Frame):
         metin = f"{post.get('caption', '')}\n{post.get('hashtags', '')}".strip()
         s = skorlama.caption_skoru(metin)
         self.skor_etiket.config(text=f"{s['puan']}/100")
-        renk = "#20B89A" if s["puan"] >= 75 else ("#F0A830" if s["puan"] >= 50 else "#C62828")
+        renk = "#20B89A" if s["puan"] >= 75 else ("#F0A830" if s["puan"] >= 50 else "#FF6B6B")
         self.skor_etiket.config(fg=renk)
         sat = [f"{s.get('degerlendirme', '')}"]
         for tip, m in s["maddeler"]:
