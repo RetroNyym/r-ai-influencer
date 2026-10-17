@@ -25,6 +25,32 @@ def gorsel_uret(prompt, seed, genislik=1024, yukseklik=1280):
     raise RuntimeError("Gorsel uretimi basarisiz")
 
 
+def tutarli_gorsel_uret(persona, prompt, seed, genislik=1024, yukseklik=1280):
+    """Görsel üretir; persona'nın kilitli kimliği varsa yüze uygular.
+
+    Böylece her sahnede AYNI kişi görünür (stabil karakter). Kimlik yoksa
+    veya yüzsüz bir sahne üretilirse ham görsel döner.
+    """
+    import numpy as np
+    import cv2
+    data = gorsel_uret(prompt, seed=seed, genislik=genislik, yukseklik=yukseklik)
+    kimlik = kisilik.kimlik_al(persona.get("id")) if persona else None
+    if not kimlik:
+        return data
+    try:
+        from core import yuz_degistir
+        img = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
+        if img is None:
+            return data
+        sonuc = yuz_degistir.kimlik_uygula(img, kimlik)
+        if sonuc is None:
+            return data
+        ok, buf = cv2.imencode(".jpg", sonuc, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        return buf.tobytes() if ok else data
+    except Exception:
+        return data
+
+
 def caption_uret(persona, sahne):
     """Pollinations text ile caption + hashtag üretir."""
     prompt = (
@@ -99,7 +125,8 @@ def toplu_uret(persona_id, sahne_sayisi=3, ilerleme_cb=None):
         prompt = kisilik.prompt_yap(sahne, persona)
 
         try:
-            gorsel_bytes = gorsel_uret(prompt, seed=persona.get("seed", 0) + i)
+            gorsel_bytes = tutarli_gorsel_uret(persona, prompt,
+                                               seed=persona.get("seed", 0) + i)
         except Exception as e:
             if ilerleme_cb:
                 ilerleme_cb(i + 1, sahne_sayisi, f"Sahne {i+1} HATA: {e}")

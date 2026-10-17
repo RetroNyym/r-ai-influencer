@@ -44,6 +44,34 @@ def kanon_sec(persona_id, gorsel_yol):
     depolama.persona_guncelle(persona_id, {"kanon_gorsel": gorsel_yol})
 
 
+def kimlik_kilitle(persona_id, gorsel_yol):
+    """Bir suretin ArcFace kimliğini kilitler (stabil karakter için).
+
+    Kilitlenen kimlik, sonraki tüm üretimlerde (post, çizgi film, video)
+    aynı kişinin tutarlı çıkmasını sağlar.
+    """
+    import json
+    from core import yuz_degistir
+    z = yuz_degistir.kimlik_cikar(gorsel_yol)
+    depolama.persona_guncelle(persona_id, {
+        "kimlik_embedding": json.dumps(z),
+        "kanon_gorsel": gorsel_yol,
+    })
+    return z
+
+
+def kimlik_al(persona_id):
+    """Kilitli kimlik vektörünü döndürür; yoksa None."""
+    import json
+    p = depolama.persona_al(persona_id)
+    if not p or not p.get("kimlik_embedding"):
+        return None
+    try:
+        return json.loads(p["kimlik_embedding"])
+    except Exception:
+        return None
+
+
 def prompt_yap(sahne, persona):
     """Sahne + persona anchor'u birleştirir. Anchor her zaman başta."""
     anchor = persona.get("anchor_prompt", "")

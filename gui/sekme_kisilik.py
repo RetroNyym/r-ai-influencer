@@ -287,10 +287,15 @@ class SekmeKisilik(ttk.Frame):
         if not secili:
             return
         pid = int(secili[0])
-        kisilik.kanon_sec(pid, yol)
-        messagebox.showinfo("Tamam", "Canon güncellendi")
+        # Kimlik kilitle: aynı kişi tüm üretimlerde tutarlı çıksın
+        try:
+            kisilik.kimlik_kilitle(pid, yol)
+            mesaj = "Canon + kimlik kilitlendi (stabil karakter)"
+        except Exception as e:
+            kisilik.kanon_sec(pid, yol)
+            mesaj = f"Canon güncellendi (kimlik kilitlenemedi: {e})"
+        messagebox.showinfo("Tamam", mesaj)
         self._listeyi_yenile()
-        # Alt bardaki vesikalığı da tazele
         persona = kisilik.persona_al(pid)
         if persona:
             self._bar_bildir(persona)

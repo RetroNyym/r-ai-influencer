@@ -103,6 +103,40 @@ def kimlik_al(gorsel_yol):
     return f
 
 
+def kimlik_cikar(gorsel_yol):
+    """Bir fotoğraftan ArcFace kimlik vektörünü çıkarır (JSON-uyumlu liste).
+
+    Bu vektör bir "kimlik kilidi"dir: aynı kişi tüm üretimlerde tutarlı
+    çıksın diye saklanır ve sonradan herhangi bir sahneye uygulanabilir.
+    """
+    f = kimlik_al(gorsel_yol)
+    z = f.embedding.astype(np.float32)
+    z = z / (np.linalg.norm(z) + 1e-6)
+    return [float(x) for x in z]
+
+
+def kimlik_uygula(img, kimlik_embedding):
+    """Kilitli kimlik vektörünü bir görseldeki yüze uygular (tutarlı karakter).
+
+    img: Pollinations vb. ile üretilmiş sahne (ndarray BGR).
+    kimlik_embedding: kimlik_cikar() çıktısı (liste) veya ndarray.
+    Yüz yoksa None döner (sahne kişi içermiyor olabilir).
+    """
+    app, swapper = _motor()
+    f = en_iyi_yuz(app, img)
+    if f is None:
+        return None
+
+    z = np.asarray(kimlik_embedding, dtype=np.float32)
+    z = z / (np.linalg.norm(z) + 1e-6)
+
+    from insightface.app.common import Face
+    kaynak = Face(dict(f))
+    kaynak["embedding"] = z
+    # get(img, target_face, source_face) — hedef önce, kaynak sonra
+    return swapper.get(img.copy(), f, kaynak)
+
+
 def suret_degistir(kullanici_yol, hedef_yol, oran=0.55, mod="kullanici"):
     """Kullanıcının yüzünü, hedef kimlikle harmanlayarak farklı bir surete çevirir.
 

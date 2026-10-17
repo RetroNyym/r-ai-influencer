@@ -37,6 +37,7 @@ def kur():
             kanon_gorsel TEXT,
             kaynak TEXT DEFAULT 'ai',
             yuz_meta TEXT,
+            kimlik_embedding TEXT,
             olusturma REAL
         );
         CREATE TABLE IF NOT EXISTS posts (
@@ -93,6 +94,11 @@ def kur():
             bitis REAL
         );
         """)
+        # Göç: eski tablolara kimlik_embedding kolonu ekle (varsa yoksay)
+        try:
+            c.execute("ALTER TABLE personas ADD COLUMN kimlik_embedding TEXT")
+        except sqlite3.OperationalError:
+            pass
         c.commit()
 
 
