@@ -273,11 +273,26 @@ def uretim_yonlendir(prompt, seed=42, genislik=1024, yukseklik=1280,
 
 def _pollinations_uret(prompt, seed, w, h):
     enc = urllib.parse.quote(prompt)
-    url = (f"https://image.pollinations.ai/prompt/{enc}"
-           f"?width={w}&height={h}&seed={seed}&model=flux&private=true&nologo=true")
-    r = requests.get(url, timeout=90)
-    r.raise_for_status()
-    return r.content
+    temel = f"https://image.pollinations.ai/prompt/{enc}?width={w}&height={h}&seed={seed}"
+    # private=true artık ücretli/lisanslı hesap isteyebilir; 402 alınsa Public denenir
+    # 402 ayrıca geçici rate-limit olabilir: döngü 2 tur, turlar arası bekleme
+    for tur in range(2):
+        for ek, bekle in [("&model=flux&private=true&nologo=true", 0),
+                          ("&model=flux&nologo=true", 3),
+                          ("", 6)]:
+            if bekle:
+                time.sleep(bekle)
+            try:
+                r = requests.get(temel + ek, timeout=90)
+                if r.status_code == 402:
+                    continue
+                r.raise_for_status()
+                if len(r.content) > 500:
+                    return r.content
+            except requests.RequestException:
+                continue
+        time.sleep(8)
+    raise RuntimeError("Pollinations görsel üretimi başarısız (402/ağ)")
 
 
 def _openai_uret(key, prompt, seed, w, h):

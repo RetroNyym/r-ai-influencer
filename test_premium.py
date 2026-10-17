@@ -85,17 +85,40 @@ if uretim_sekme.tree.get_children():
     time.sleep(0.4)
 kaydet("premium_03_uretim_altbar.png")
 
-# 4) Takvim
+# 4) Video sekmesi
 app.notebook.select(2)
 app.update()
 time.sleep(0.3)
-kaydet("premium_04_takvim.png")
+kaydet("premium_04_video.png")
 
-# 5) API
+# 5) Yayın & Analiz
 app.notebook.select(3)
 app.update()
 time.sleep(0.3)
-kaydet("premium_05_api.png")
+yayin_sekme = app.sekme_yayin
+if yayin_sekme.tree.get_children():
+    yayin_sekme.tree.selection_set(yayin_sekme.tree.get_children()[0])
+    yayin_sekme.tree.event_generate("<<TreeviewSelect>>")
+    app.update()
+kaydet("premium_05_yayin.png")
+
+# 6) Takvim
+app.notebook.select(4)
+app.update()
+time.sleep(0.3)
+kaydet("premium_06_takvim.png")
+
+# 7) API
+app.notebook.select(5)
+app.update()
+time.sleep(0.3)
+kaydet("premium_07_api.png")
+
+# 8) Araçlar
+app.notebook.select(6)
+app.update()
+time.sleep(0.3)
+kaydet("premium_08_arac.png")
 
 app.destroy()
 print("Tamamlandi")

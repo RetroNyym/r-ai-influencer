@@ -6,7 +6,8 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
-from gui import sekme_api, sekme_kisilik, sekme_takvim, sekme_uretim
+from gui import sekme_api, sekme_arac, sekme_kisilik, sekme_takvim, \
+    sekme_uretim, sekme_video, sekme_yayin
 from gui.palet import (AMBER, AMBER_KOYU, AMBER_ZEMIN, BASLIK_SOLUK,
                        BASLIK_ZEMIN, CIZGI, KART, KART_GOLGE, METIN_KOYU,
                        METIN_SOLUK, TEAL, TEAL_KOYU, TEAL_ORTA, TEAL_PARLAK,
@@ -185,15 +186,21 @@ class AnaPencere(tk.Tk):
             self.notebook, on_karakter=self.vesikalik_guncelle)
         self.sekme_uretim = sekme_uretim.SekmeUretim(
             self.notebook, on_karakter=self.vesikalik_guncelle)
+        self.sekme_video = sekme_video.SekmeVideo(self.notebook)
+        self.sekme_yayin = sekme_yayin.SekmeYayin(self.notebook)
         self.sekme_takvim = sekme_takvim.SekmeTakvim(self.notebook)
         self.sekme_api = sekme_api.SekmeApi(self.notebook,
                                             ig_foto=self._ig,
                                             tt_foto=self._tt)
+        self.sekme_arac = sekme_arac.SekmeArac(self.notebook)
 
         self.notebook.add(self.sekme_kisilik, text="  Karakter  ")
         self.notebook.add(self.sekme_uretim, text="  Üretim & Onay  ")
+        self.notebook.add(self.sekme_video, text="  Video  ")
+        self.notebook.add(self.sekme_yayin, text="  Yayın & Analiz  ")
         self.notebook.add(self.sekme_takvim, text="  Takvim  ")
         self.notebook.add(self.sekme_api, text="  API & Bağlantılar  ")
+        self.notebook.add(self.sekme_arac, text="  Araçlar  ")
 
         # Sekme değişince üretim kuyruğunu tazele (kuyruğa eklenenler görünsün)
         self.notebook.bind("<<NotebookTabChanged>>", self._sekme_degisti)

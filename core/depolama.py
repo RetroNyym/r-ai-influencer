@@ -71,7 +71,98 @@ def kur():
             anahtar TEXT PRIMARY KEY,
             deger TEXT
         );
+        CREATE TABLE IF NOT EXISTS performans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id INTEGER,
+            platform TEXT,
+            goruntulenme INTEGER DEFAULT 0,
+            begeni INTEGER DEFAULT 0,
+            yorum INTEGER DEFAULT 0,
+            paylasim INTEGER DEFAULT 0,
+            tarih REAL,
+            notlar TEXT,
+            FOREIGN KEY(post_id) REFERENCES posts(id)
+        );
+        CREATE TABLE IF NOT EXISTS toplu_kuyruk (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tip TEXT,
+            parametre TEXT,
+            durum TEXT DEFAULT 'bekliyor',
+            hata TEXT,
+            olusturma REAL,
+            bitis REAL
+        );
         """)
+        c.commit()
+
+
+# --- performans ---
+def performans_ekle(post_id, platform, goruntulenme=0, begeni=0, yorum=0,
+                    paylasim=0, notlar=""):
+    with baglanti() as c:
+        cur = c.execute(
+            """INSERT INTO performans(post_id,platform,goruntulenme,begeni,yorum,
+               paylasim,tarih,notlar) VALUES(?,?,?,?,?,?,?,?)""",
+            (post_id, platform, goruntulenme, begeni, yorum, paylasim,
+             time.time(), notlar))
+        c.commit()
+        return cur.lastrowid
+
+
+def performans_listele(limit=100):
+    with baglanti() as c:
+        return [dict(r) for r in c.execute(
+            """SELECT pf.*, p.caption, p.gorsel_yol FROM performans pf
+               LEFT JOIN posts p ON p.id=pf.post_id
+               ORDER BY pf.tarih DESC LIMIT ?""", (limit,))]
+
+
+def performans_istatistik():
+    with baglanti() as c:
+        toplam = c.execute(
+            """SELECT COUNT(*) n, COALESCE(SUM(goruntulenme),0) g,
+               COALESCE(SUM(begeni),0) b, COALESCE(SUM(yorum),0) y,
+               COALESCE(SUM(paylasim),0) p FROM performans""").fetchone()
+        en_iyi = c.execute(
+            """SELECT pf.*, p.caption FROM performans pf
+               LEFT JOIN posts p ON p.id=pf.post_id
+               ORDER BY pf.goruntulenme DESC LIMIT 5""").fetchall()
+        return {"toplam": dict(toplam), "en_iyi": [dict(r) for r in en_iyi]}
+
+
+# --- toplu kuyruk ---
+def toplu_ekle(tip, parametre):
+    with baglanti() as c:
+        cur = c.execute(
+            "INSERT INTO toplu_kuyruk(tip,parametre,durum,olusturma) VALUES(?,?,?,?)",
+            (tip, json.dumps(parametre, ensure_ascii=False), "bekliyor", time.time()))
+        c.commit()
+        return cur.lastrowid
+
+
+def toplu_listele():
+    with baglanti() as c:
+        satirlar = [dict(r) for r in c.execute(
+            "SELECT * FROM toplu_kuyruk ORDER BY id")]
+        for s in satirlar:
+            try:
+                s["parametre"] = json.loads(s["parametre"] or "{}")
+            except Exception:
+                s["parametre"] = {}
+        return satirlar
+
+
+def toplu_durum_guncelle(tid, durum, hata=None):
+    with baglanti() as c:
+        bitis = time.time() if durum in ("bitti", "hata") else None
+        c.execute("UPDATE toplu_kuyruk SET durum=?, hata=?, bitis=? WHERE id=?",
+                  (durum, hata, bitis, tid))
+        c.commit()
+
+
+def toplu_temizle():
+    with baglanti() as c:
+        c.execute("DELETE FROM toplu_kuyruk WHERE durum IN ('bitti')")
         c.commit()
 
 
