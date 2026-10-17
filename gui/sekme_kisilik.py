@@ -67,12 +67,25 @@ class SekmeKisilik(ttk.Frame):
                    command=self._olustur).pack(fill="x", padx=16, pady=12)
 
         ttk.Separator(sol).pack(fill="x", padx=16, pady=4)
-        ttk.Label(sol, text="Kendi Yüzünden Suret (Offline)",
+        ttk.Label(sol, text="Kendi Yüzünden Suret",
                   style="Vurgu.TLabel",
                   font=("Segoe UI", 11, "bold")).pack(anchor="w", padx=16, pady=(8, 4))
+
+        # Yöntem seçimi
+        yontem_f = ttk.Frame(sol, style="Kart.TFrame")
+        yontem_f.pack(fill="x", padx=16, pady=2)
+        ttk.Label(yontem_f, text="Yöntem", style="Kart.TLabel",
+                  width=14, anchor="w").pack(side="left")
+        self.yontem = tk.StringVar(value="kimlik")
+        yontem_sec = ttk.Combobox(yontem_f, textvariable=self.yontem,
+                                  state="readonly", values=[
+                                      "kimlik — Farklı bir kişi (AI, gerçekçi)",
+                                      "varyasyon — Hafif varyasyon (eski, offline)"])
+        yontem_sec.pack(side="left", fill="x", expand=True)
+
         ttk.Label(sol,
-                  text="Fotoğrafınızı yükleyin; program API'siz, yerel\n"
-                       "işlemle 8 farklı suret varyasyonu üretir.",
+                  text="Fotoğrafınızı yükleyin. 'Kimlik' yöntemi yüzünüzü\n"
+                       "farklı ama gerçekçi bir surete dönüştürür.",
                   style="Kart.TLabel", justify="left").pack(anchor="w", padx=16)
 
         self.izin_var = tk.BooleanVar(value=False)
@@ -83,7 +96,7 @@ class SekmeKisilik(ttk.Frame):
         btn_yuz.pack(fill="x", padx=16, pady=4)
         ttk.Button(btn_yuz, text="Fotoğraf Seç", style="Kart.TButton",
                    command=self._foto_sec).pack(side="left", padx=(0, 6))
-        ttk.Button(btn_yuz, text="8 Varyasyon Üret", style="Yesil.TButton",
+        ttk.Button(btn_yuz, text="8 Suret Üret", style="Yesil.TButton",
                    command=self._varyasyon).pack(side="left")
 
         self.yuz_durum = ttk.Label(sol, text="", style="Kart.TLabel",
@@ -193,19 +206,33 @@ class SekmeKisilik(ttk.Frame):
         pid = int(secili[0])
         self._varyasyon_pid = pid
 
-        self.yuz_durum.config(text="Yüz dönüştürülüyor (offline)...")
-        threading.Thread(target=self._varyasyon_worker, args=(pid,),
+        kimlik = self.yontem.get().startswith("kimlik")
+        etiket = "farklı kişiye dönüştürülüyor" if kimlik else "varyasyon üretiliyor"
+        self.yuz_durum.config(text=f"Yüz {etiket}...")
+        threading.Thread(target=self._varyasyon_worker, args=(pid, kimlik),
                          daemon=True).start()
 
-    def _varyasyon_worker(self, pid):
+    def _varyasyon_worker(self, pid, kimlik=True):
         try:
-            from core import yuz_donusum
             klasor = depolama.URETILEN_KLASOR / "kanon" / str(pid)
-            sonuclar = yuz_donusum.varyasyon_uret(
-                self.secili_foto, klasor, sayi=8)
-            # Persona'ya kaydet
+            persona = kisilik.persona_al(pid)
+            if kimlik:
+                # Sektör standardı: insightface inswapper + ArcFace kimlik harmanlama
+                from core import yuz_degistir
+                sonuclar = yuz_degistir.kanon_suretler(
+                    self.secili_foto, persona, klasor, sayi=8)
+                yontem = "inswapper+arcface kimlik"
+            else:
+                # Eski offline Delaunay warp (yedek)
+                from core import yuz_donusum
+                sonuclar = yuz_donusum.varyasyon_uret(
+                    self.secili_foto, klasor, sayi=8)
+                yontem = "delaunay warp"
+            if not sonuclar:
+                raise RuntimeError("Hiç suret üretilemedi.")
             yollar = [s["gorsel_yol"] for s in sonuclar]
-            meta = {"varyasyon_meta": [s["meta"] for s in sonuclar]}
+            meta = {"yontem": yontem,
+                    "varyasyon_meta": [s.get("meta", {}) for s in sonuclar]}
             kisilik.kendi_yuzunden(pid, self.secili_foto, str(meta), yollar)
             self.after(0, lambda: self._varyasyon_bitti(sonuclar))
         except Exception as e:
