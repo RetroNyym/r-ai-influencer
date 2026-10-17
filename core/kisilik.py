@@ -16,6 +16,59 @@ GERCEKCI_SON = (
     "no CGI, no anime, no painting, no cartoon"
 )
 
+# --- Görüntü modları (GUI "Görüntü Modu" seçicisi) ---
+# Her mod, prompt'un sonuna eklenen stil token'larıdır. Varsayılan:
+# "gercekci" → referanstaki gibi gerçekçi (fotogerçeklik) karakterler.
+GORSEL_MODLAR = {
+    "gercekci": (
+        "Fotogerçek",
+        GERCEKCI_SON,
+    ),
+    "sinematik": (
+        "Sinematik",
+        "cinematic film still, dramatic lighting, anamorphic lens flare, "
+        "rich color grading, 35mm Kodak Portra film look, subtle film grain, "
+        "realistic skin texture, natural proportions, photorealistic, "
+        "no illustration, no CGI, no anime, no painting, no cartoon",
+    ),
+    "stüdyo": (
+        "Stüdyo Portre",
+        "professional studio portrait photography, softbox key light with "
+        "fill, seamless dark backdrop, beauty dish catchlights, "
+        "85mm lens headshot, natural skin pores, sharp focus on eyes, "
+        "photorealistic, high detail, no retouching, no illustration, "
+        "no CGI, no anime, no cartoon",
+    ),
+    "sokak": (
+        "Doğaçka Sokak",
+        "candid street photography, golden hour sunlight, urban background "
+        "with natural bokeh, spontaneous pose, available light, "
+        "documentary photojournalism style, realistic skin texture, "
+        "photorealistic, unposed, no studio lighting, no illustration, "
+        "no CGI, no anime, no cartoon",
+    ),
+    "moda": (
+        "Editoryal Moda",
+        "high fashion editorial photography, Vogue magazine style, "
+        "elegant pose, designer outfit, crisp studio lighting, "
+        "fashion model proportions, detailed fabric texture, "
+        "photorealistic, sharp focus, no illustration, no CGI, "
+        "no anime, no cartoon",
+    ),
+}
+
+
+def gorsel_modu(mod=None):
+    """Aktif görüntü modunu döndürür (ayar yoksa fotogerçek)."""
+    if not mod:
+        try:
+            mod = depolama.ayar_al("gorsel_mod", "gercekci")
+        except Exception:
+            mod = "gercekci"
+    if mod not in GORSEL_MODLAR:
+        mod = "gercekci"
+    return mod
+
 
 
 def yeni_kisilik(ad, yas, nis, ten, sac, goz, stil, kisilik_tanimi, marka_sesi):
@@ -72,10 +125,14 @@ def kimlik_al(persona_id):
         return None
 
 
-def prompt_yap(sahne, persona):
-    """Sahne + persona anchor'u birleştirir. Anchor her zaman başta."""
+def prompt_yap(sahne, persona, mod=None):
+    """Sahne + persona anchor'u birleştirir. Anchor her zaman başta.
+
+    mod: GORSEL_MODLAR anahtarı (ör. "gercekci"). None → aktif ayar.
+    """
     anchor = persona.get("anchor_prompt", "")
-    return f"{anchor}, {sahne}, social media photo, 9:16 aspect ratio, {GERCEKCI_SON}"
+    stil_son = GORSEL_MODLAR[gorsel_modu(mod)][1]
+    return f"{anchor}, {sahne}, social media photo, 9:16 aspect ratio, {stil_son}"
 
 
 def _anchor_yap(ad, yas, ten, sac, goz, stil, kisilik_tanimi):

@@ -177,13 +177,15 @@ def kanon_uret(persona_id, sayi=8, ilerleme_cb=None):
         raise ValueError("Persona bulunamadi")
 
     base_prompt = persona.get("anchor_prompt", "")
+    stil_son = kisilik.GORSEL_MODLAR[kisilik.gorsel_modu()][1]
     adaylar = []
     seed = persona.get("seed", 0)
 
     for i in range(sayi):
         if ilerleme_cb:
             ilerleme_cb(i + 1, sayi, f"Aday {i+1}/{sayi}...")
-        prompt = f"{base_prompt}, portrait headshot, neutral background, looking at camera"
+        prompt = (f"{base_prompt}, portrait headshot, neutral background, "
+                  f"looking at camera, {stil_son}")
         try:
             data = gorsel_uret(prompt, seed=seed + i, genislik=768, yukseklik=768)
         except Exception:

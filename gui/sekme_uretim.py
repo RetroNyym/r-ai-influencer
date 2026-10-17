@@ -52,6 +52,29 @@ class SekmeUretim(ttk.Frame):
                  bg=KART, fg=METIN_SOLUK, font=("Segoe UI", 9),
                  justify="left").pack(anchor="w", padx=18, pady=(2, 6))
 
+        # --- Görüntü modu (fotogerçek / sinematik / stüdyo / sokak / moda) ---
+        mod_f = tk.Frame(sol, bg=KART)
+        mod_f.pack(fill="x", padx=18, pady=(6, 4))
+        tk.Label(mod_f, text="Görüntü Modu:", bg=KART, fg=METIN_KOYU,
+                 width=12, anchor="w",
+                 font=("Segoe UI", 10)).pack(side="left")
+        self.mod_cb = ttk.Combobox(
+            mod_f, state="readonly", width=22,
+            values=[v[0] for v in kisilik.GORSEL_MODLAR.values()])
+        self.mod_cb.pack(side="left", fill="x", expand=True)
+        self.mod_cb.bind("<<ComboboxSelected>>", self._mod_degisti)
+        _mod_anahtarlar = list(kisilik.GORSEL_MODLAR.keys())
+        try:
+            aktif = kisilik.gorsel_modu()
+            self.mod_cb.current(_mod_anahtarlar.index(aktif))
+        except (ValueError, IndexError):
+            self.mod_cb.current(0)
+        tk.Label(sol,
+                 text="Fotogerçek: referanstaki gibi gerçekçi yüzler;\n"
+                      "sinematik/stüdyo/sokak/moda alternatif stiller.",
+                 bg=KART, fg=METIN_SOLUK, font=("Segoe UI", 8),
+                 justify="left").pack(anchor="w", padx=18, pady=(0, 4))
+
         f2 = tk.Frame(sol, bg=KART)
         f2.pack(fill="x", padx=18, pady=4)
         tk.Label(f2, text="Sahne sayısı:", bg=KART, fg=METIN_KOYU, width=10,
@@ -162,6 +185,14 @@ class SekmeUretim(ttk.Frame):
 
     def _persona_degisti(self, event=None):
         self._persona_vesikalik_goster()
+
+    def _mod_degisti(self, event=None):
+        anahtarlar = list(kisilik.GORSEL_MODLAR.keys())
+        try:
+            secim = self.mod_cb.current()
+        except Exception:
+            secim = 0
+        depolama.ayar_koy("gorsel_mod", anahtarlar[secim])
 
     def _persona_vesikalik_goster(self):
         """Seçili persona'nın kanon görselini alt bardaki vesikalığa bildirir."""
