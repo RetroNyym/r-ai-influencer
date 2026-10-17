@@ -127,52 +127,68 @@ _ANA_INDEKS = {
 
 
 def _delunay_warp(img, kaynak, hedef):
-    """Delaunay triangulation ile piecewise-affine warp."""
+    """Delaunay triangulation ile piecewise-affine warp.
+
+    Subdiv2D dikdörtgen köşeleri (0,0)/(w,0)/(0,h)/(w,h) üçgenlere girer;
+    bunlar landmark setinde olmadığından en yakın noktaya snap edilip
+    dev üçgenler (yanlış bölge yapıştırma) oluştururdu — köşe üçgenleri
+    bilinçli olarak atlanır.
+    """
     h, w = img.shape[:2]
     rect = (0, 0, w, h)
 
-    # Delaunay üçgenleri
+    # Benzersiz noktalar + kaynak→hedef eşlemesi (ilk geçeni koru)
+    esleme = {}
+    for s, d in zip(kaynak, hedef):
+        p = (int(round(float(s[0]))), int(round(float(s[1]))))
+        p = (max(0, min(w - 1, p[0])), max(0, min(h - 1, p[1])))
+        if p not in esleme:
+            esleme[p] = (np.array(s, dtype=np.float32),
+                         np.array(d, dtype=np.float32))
+    if len(esleme) < 3:
+        return img.copy()
+
     tri = cv2.Subdiv2D(rect)
-    noktalar = []
-    for p in kaynak:
-        x, y = int(p[0]), int(p[1])
-        x = max(0, min(w - 1, x))
-        y = max(0, min(h - 1, y))
-        tri.insert((float(x), float(y)))
-        noktalar.append((x, y))
+    for p in esleme:
+        try:
+            tri.insert((float(p[0]), float(p[1])))
+        except cv2.error:
+            pass
 
     ucgenler = tri.getTriangleList()
     son = img.copy()
 
     for t in ucgenler:
-        p1 = (int(t[0]), int(t[1]))
-        p2 = (int(t[2]), int(t[3]))
-        p3 = (int(t[4]), int(t[5]))
-
-        # Kaynak üçgen indekslerini bul
-        indeksler = []
-        for p in [p1, p2, p3]:
-            en_yakin = -1
-            en_uzak = 1e9
-            for i, n in enumerate(noktalar):
-                d = (n[0] - p[0]) ** 2 + (n[1] - p[1]) ** 2
-                if d < en_uzak:
-                    en_uzak = d
-                    en_yakin = i
-            indeksler.append(en_yakin)
-
-        if len(set(indeksler)) != 3:
+        pts_t = [(t[0], t[1]), (t[2], t[3]), (t[4], t[5])]
+        src_tri, dst_tri = [], []
+        gecerli = True
+        for tx, ty in pts_t:
+            anahtar = (int(round(tx)), int(round(ty)))
+            if anahtar not in esleme:  # köşe/frame noktası veya yuvarlama kaybı
+                gecerli = False
+                break
+            s, d = esleme[anahtar]
+            src_tri.append(s)
+            dst_tri.append(d)
+        if not gecerli:
             continue
-
-        src_tri = np.float32([kaynak[i] for i in indeksler])
-        dst_tri = np.float32([hedef[i] for i in indeksler])
+        src_tri = np.float32(src_tri)
+        dst_tri = np.float32(dst_tri)
 
         try:
+            # Dejenere üçgenleri atla (çok ince / çok büyük)
+            alan_src = cv2.contourArea(src_tri.reshape(-1, 1, 2))
+            alan_dst = cv2.contourArea(dst_tri.reshape(-1, 1, 2))
+            if alan_src < 4 or alan_dst < 4:
+                continue
+            alan_oran = max(alan_src, alan_dst) / max(1.0, min(alan_src, alan_dst))
+            if alan_oran > 8:
+                continue
+
             r1 = cv2.boundingRect(src_tri)
             r2 = cv2.boundingRect(dst_tri)
             x1, y1, w1, h1 = r1
             x2, y2, w2, h2 = r2
-
             if w1 <= 0 or h1 <= 0 or w2 <= 0 or h2 <= 0:
                 continue
             if x1 < 0 or y1 < 0 or x1 + w1 > w or y1 + h1 > h:
@@ -182,54 +198,69 @@ def _delunay_warp(img, kaynak, hedef):
             src_tri_rel = src_tri - np.array([x1, y1], dtype=np.float32)
             dst_tri_rel = dst_tri - np.array([x2, y2], dtype=np.float32)
 
-            M = cv2.getAffineTransform(src_tri_rel.astype(np.float32),
-                                       dst_tri_rel.astype(np.float32))
+            M = cv2.getAffineTransform(src_tri_rel, dst_tri_rel)
             warped = cv2.warpAffine(src_crop, M, (w2, h2),
                                     flags=cv2.INTER_LINEAR,
                                     borderMode=cv2.BORDER_REFLECT)
 
-            # Maske ile birleştir
             mask = np.zeros((h2, w2), dtype=np.uint8)
             cv2.fillConvexPoly(mask, np.int32(dst_tri_rel), 255)
 
-            # Hedef sınırlar içinde
             y2e, y2f = max(0, y2), min(h, y2 + h2)
             x2e, x2f = max(0, x2), min(w, x2 + w2)
             wy1, wx1 = y2e - y2, x2e - x2
             wy2, wx2 = wy1 + (y2f - y2e), wx1 + (x2f - x2e)
-
             if wy2 <= wy1 or wx2 <= wx1:
                 continue
 
             roi = son[y2e:y2f, x2e:x2f]
             mask_roi = mask[wy1:wy2, wx1:wx2]
             warped_roi = warped[wy1:wy2, wx1:wx2]
-
-            if roi.shape != warped_roi.shape or roi.shape != mask_roi.shape + (3,):
-                if len(roi.shape) == 3 and len(mask_roi.shape) == 2:
-                    mask_roi = cv2.cvtColor(mask_roi, cv2.COLOR_GRAY2BGR)
-                else:
-                    continue
-
-            if mask_roi.shape[:2] != roi.shape[:2]:
+            if roi.shape != warped_roi.shape or mask_roi.shape[:2] != roi.shape[:2]:
                 continue
 
-            son[y2e:y2f, x2e:x2f] = np.where(
-                mask_roi > 0, warped_roi, roi)
+            son[y2e:y2f, x2e:x2f] = np.where(mask_roi[..., None] > 0,
+                                              warped_roi, roi)
         except Exception:
             continue
 
     return son
 
 
+def _yuz_maske(img, landmarklar, genislet=0.12, yumusat=0.35):
+    """Landmark'lardan türetilmiş yumuşatılmış yüz maskesi.
+
+    Warp'ı yalnızca yüzün içine uygulayıp arka planı/silueti korur;
+    böylece Delaunay sınır üçgenlerinin oluşturduğu ince tel çizgileri önlenir.
+    """
+    h, w = img.shape[:2]
+    pts = np.array(landmarklar, dtype=np.int32)
+    hull = cv2.convexHull(pts)
+
+    mask = np.zeros((h, w), dtype=np.uint8)
+    cv2.fillConvexPoly(mask, hull, 255)
+
+    # Yüzü biraz büyüt (kenar boşluğu bırak) ama arka plana taşma
+    merkez = (w // 2, h // 2)
+    olcek = 1.0 + genislet
+    M = cv2.getRotationMatrix2D(merkez, 0, olcek)
+    mask = cv2.warpAffine(mask, M, (w, h), flags=cv2.INTER_LINEAR,
+                          borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+
+    # Yumuşak geçiş (feather) için Gaussian blur
+    r = max(3, int(min(h, w) * yumusat * 0.05))
+    mask = cv2.GaussianBlur(mask, (0, 0), r)
+    return mask
+
+
 def _ten_tonu_kaydir(img, rng):
-    """Histogram matching ile doğal ten tonu kaydırma."""
+    """LAB aralığında yumuşak, doğal ten tonu kaydırma (abartısız)."""
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB).astype(np.float32)
 
-    # L: parlaklık, A: yeşil-kırmızı, B: sarı-mavi
-    l_dk = rng.randint(-20, 20)   # parlaklık
-    a_kay = rng.randint(-12, 12)  # ten sıcaklığı
-    b_kay = rng.randint(-10, 10)  # ten sarılığı
+    # L: parlaklık, A: yeşil-kırmızı, B: sarı-mavi — sınırlı kaydırma
+    l_dk = rng.randint(-8, 8)    # parlaklık
+    a_kay = rng.randint(-5, 5)   # ten sıcaklığı
+    b_kay = rng.randint(-4, 4)   # ten sarılığı
 
     lab[:, :, 0] = np.clip(lab[:, :, 0] + l_dk, 0, 255)
     lab[:, :, 1] = np.clip(lab[:, :, 1] + a_kay, 0, 255)
@@ -238,9 +269,9 @@ def _ten_tonu_kaydir(img, rng):
     son = cv2.cvtColor(lab.astype(np.uint8), cv2.COLOR_LAB2BGR)
 
     # Hafif histogram eşleme (kontrast)
-    if rng.random() < 0.5:
+    if rng.random() < 0.35:
         lab2 = cv2.cvtColor(son, cv2.COLOR_BGR2LAB)
-        clahe = cv2.createCLAHE(clipLimit=1.2, tileGridSize=(8, 8))
+        clahe = cv2.createCLAHE(clipLimit=1.1, tileGridSize=(8, 8))
         lab2[:, :, 0] = clahe.apply(lab2[:, :, 0])
         son = cv2.cvtColor(lab2, cv2.COLOR_LAB2BGR)
 
@@ -283,10 +314,9 @@ def _goz_parlat(img, landmarklar, rng):
         roi = son[y1:y2, x1:x2]
         if roi.size == 0:
             continue
-        # Hafif parlaklık + netlik
-        roi = cv2.convertScaleAbs(roi, alpha=1.08, beta=3)
-        kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-        roi = cv2.filter2D(roi, -1, kernel * 0.3 + np.eye(3, dtype=np.float32) * 0.7)
+        # Parlaklığı koruyan unsharp mask (toplam=1.0) — parlaklık patlamasını önler
+        blur = cv2.GaussianBlur(roi, (0, 0), sigmaX=1.2)
+        roi = cv2.addWeighted(roi, 1.35, blur, -0.35, 0)
         son[y1:y2, x1:x2] = roi
     return son
 
@@ -325,12 +355,12 @@ def varyasyon_uret(gorsel_yol, cikti_klasor, seed=None, sayi=8):
 
         # 1. Hedef landmark'ları deplace et (Delaunay warp için)
         hedef_pts = kaynak_pts.copy()
-        guc = rng.uniform(0.03, 0.07)
+        guc = rng.uniform(0.02, 0.05)
 
         h, w = img.shape[:2]
-        # Çene genişliği/darlığı
+        # Çene genişliği/darlığı (daha ılımlı — tel çizgi artefaktını önler)
         if len(landmarklar) > 152:
-            cene_delta = int(w * guc)
+            cene_delta = int(w * guc * 0.5)
             for idx in [152, 377, 400, 378, 172, 136, 150]:
                 if idx < len(hedef_pts):
                     hedef_pts[idx] = (
@@ -354,8 +384,12 @@ def varyasyon_uret(gorsel_yol, cikti_klasor, seed=None, sayi=8):
                     hedef_pts[idx][0] + rng.randint(0, int(w * guc * 0.6)),
                     hedef_pts[idx][1] + rng.randint(-int(h * guc * 0.3), int(h * guc * 0.3)))
 
-        # 2. Delaunay piecewise warp
+        # 2. Delaunay piecewise warp → yalnızca yüz maskesi içinde harmanla
         warped = _delunay_warp(img, kaynak_pts, hedef_pts)
+        yuz_mask = _yuz_maske(img, landmarklar)
+        m3 = yuz_mask[..., None].astype(np.float32) / 255.0
+        warped = (warped.astype(np.float32) * m3 +
+                  img.astype(np.float32) * (1.0 - m3)).astype(np.uint8)
 
         # 3. Ten tonu kaydırma
         renkli = _ten_tonu_kaydir(warped, rng)
