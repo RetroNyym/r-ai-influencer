@@ -1,34 +1,45 @@
 # -*- coding: utf-8 -*-
-"""Premium GUI + vesikalık önizleme screenshot test."""
+"""Premium GUI + alt barda vesikalık + kuyruğa ekleme screenshot test."""
 import sys, os, time
 sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import tkinter as tk
 from PIL import ImageGrab
 from core import depolama, kisilik, uretim
 depolama.kur()
 
 TEST_KLASOR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_cikti")
 
-# Test post'u üret (Pollinations)
-print("Test postu uretiliyor...")
-try:
-    pid = 1  # mevcut Elif
-    posts = uretim.toplu_uret(pid, 1)
-    print(f"  Post: {posts[0]['gorsel_yol'] if posts else 'yok'}")
-except Exception as e:
-    print(f"  Uretim hatasi (devam): {e}")
+# Mevcut bir gorsel bul (post veya onceki test ciktisi)
+gorsel = None
+posts = depolama.post_listele()
+for p in posts:
+    if p.get("gorsel_yol") and os.path.isfile(p["gorsel_yol"]):
+        gorsel = p["gorsel_yol"]
+        break
+if not gorsel:
+    print("Test postu uretiliyor...")
+    try:
+        yeni = uretim.toplu_uret(1, 1)
+        gorsel = yeni[0]["gorsel_yol"] if yeni else None
+    except Exception as e:
+        print(f"  Uretim hatasi (devam): {e}")
 
 # GUI ac
 from gui.ana_pencere import AnaPencere
 app = AnaPencere()
 app.update_idletasks()
 app.update()
+time.sleep(0.5)
+app.update()
 
 def kaydet(isim):
+    app.lift()
+    app.attributes("-topmost", True)
+    app.focus_force()
     app.update()
-    time.sleep(0.4)
+    time.sleep(0.5)
+    app.attributes("-topmost", False)
     app.update()
     x, y = app.winfo_rootx(), app.winfo_rooty()
     w, h = app.winfo_width(), app.winfo_height()
@@ -37,34 +48,54 @@ def kaydet(isim):
     img.save(yol)
     print(f"  {yol}")
 
-# 1) Karakter sekmesi (vesikalık panel)
-kaydet("premium_01_karakter.png")
+# 1) Karakter sekmesi — ilk karakter secili gelmeli, alt barda vesikalik
+karakter_sekme = app.sekme_kisilik
+cocuklar = karakter_sekme.tree.get_children()
+if cocuklar:
+    karakter_sekme.tree.selection_set(cocuklar[0])
+    karakter_sekme.tree.event_generate("<<TreeviewSelect>>")
+app.update()
+time.sleep(0.5)
+app.update()
+kaydet("premium_01_karakter_altbar.png")
 
-# 2) Uretim & Onay (vesikalik onizleme)
+# 2) Kuyruğa ekleme simülasyonu (varyasyon yoksa mevcut gorselle)
+oncesi = len(depolama.post_listele("onay_bekliyor"))
+if gorsel:
+    karakter_sekme._varyasyon_pid = int(cocuklar[0]) if cocuklar else 1
+    karakter_sekme._kuyruga_ekle(gorsel, 99)
+    karakter_sekme.secili_yuz = [{"gorsel_yol": gorsel}]
+sonrasi = len(depolama.post_listele("onay_bekliyor"))
+print(f"  Kuyruk: {oncesi} -> {sonrasi} (beklenen +1)")
+kaydet("premium_02_karakter_kuyruk.png")
+
+# 3) Uretim & Onay — kuyruktaki yeni satir + alt barda vesikalik
 app.notebook.select(1)
 app.update()
-time.sleep(0.3)
-# Post listesinden birini sec
+time.sleep(0.4)
 uretim_sekme = app.sekme_uretim
+uretim_sekme.filtre.set("onay_bekliyor")
+uretim_sekme._yukle()
+app.update()
 if uretim_sekme.tree.get_children():
     ilk = uretim_sekme.tree.get_children()[0]
     uretim_sekme.tree.selection_set(ilk)
     uretim_sekme.tree.event_generate("<<TreeviewSelect>>")
     app.update()
-    time.sleep(0.5)
-kaydet("premium_02_uretim_vesikalik.png")
-
-# 3) API sekmesi
-app.notebook.select(3)
-app.update()
-time.sleep(0.3)
-kaydet("premium_03_api.png")
+    time.sleep(0.4)
+kaydet("premium_03_uretim_altbar.png")
 
 # 4) Takvim
 app.notebook.select(2)
 app.update()
 time.sleep(0.3)
 kaydet("premium_04_takvim.png")
+
+# 5) API
+app.notebook.select(3)
+app.update()
+time.sleep(0.3)
+kaydet("premium_05_api.png")
 
 app.destroy()
 print("Tamamlandi")

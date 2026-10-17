@@ -15,13 +15,14 @@ TEAL_KOYU = "#0A3D47"
 TEAL_VURGU = "#20B89A"
 YESIL = "#20B89A"
 YESIL_ACIK = "#DFF5EE"
-VESIKALIK_BOYUT = (160, 213)
 
 
 class SekmeKisilik(ttk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, on_karakter=None):
         super().__init__(parent, style="Govde.TFrame")
         self.secili_yuz = None  # kendi yüzünden üretilen varyasyon yolları
+        self._varyasyon_pid = None
+        self.on_karakter = on_karakter  # (gorsel_yol|None, baslik, alt) — alt barda vesikalık
         self._kur()
         self._listeyi_yenile()
 
@@ -89,7 +90,13 @@ class SekmeKisilik(ttk.Frame):
                                    wraplength=340)
         self.yuz_durum.pack(anchor="w", padx=16, pady=4)
 
-        # --- Sağ: liste + vesikalık ---
+        ttk.Label(sol,
+                  text="Not: Üretilen varyasyonlar alt bardaki vesikalık\n"
+                       "panelinde görünür. '+' ile paylaşım kuyruğuna ekleyin.",
+                  style="KartKucuk.TLabel", justify="left").pack(
+            anchor="w", padx=16, pady=(6, 12))
+
+        # --- Sağ: liste + bilgi ---
         sag = tk.Frame(paned, bg=KART, highlightthickness=1,
                        highlightbackground=CIZGI)
         paned.add(sag, width=650)
@@ -101,7 +108,7 @@ class SekmeKisilik(ttk.Frame):
         ttk.Button(ust, text="Yenile", style="Kart.TButton",
                    command=self._listeyi_yenile).pack(side="right")
 
-        # Liste + vesikalık yan yana
+        # Liste + karakter bilgisi yan yana (vesikalık artık alt barda)
         liste_f = tk.Frame(sag, bg=KART)
         liste_f.pack(fill="both", expand=True, padx=12, pady=4)
 
@@ -110,37 +117,32 @@ class SekmeKisilik(ttk.Frame):
         for col, bas in [("ad", "Ad"), ("nis", "Niş"), ("seed", "Seed"),
                          ("kaynak", "Kaynak")]:
             self.tree.heading(col, text=bas)
-            self.tree.column(col, width=100)
+            self.tree.column(col, width=110)
         self.tree.pack(side="left", fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self._secim)
 
-        # Vesikalık panel
-        ves_f = tk.Frame(liste_f, bg=KART, width=220)
-        ves_f.pack(side="right", fill="y", padx=(10, 0))
-        ves_f.pack_propagate(False)
+        # Karakter bilgi paneli
+        bilgi_f = tk.Frame(liste_f, bg=KART, width=220)
+        bilgi_f.pack(side="right", fill="y", padx=(10, 0))
+        bilgi_f.pack_propagate(False)
 
-        tk.Label(ves_f, text="Vesikalık", bg=KART, fg=TEAL_KOYU,
+        tk.Label(bilgi_f, text="Karakter Bilgisi", bg=KART, fg=TEAL_KOYU,
                  font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(0, 4))
 
-        self.vesikalik_kart = tk.Frame(ves_f, bg=ZEMIN, highlightthickness=2,
-                                       highlightbackground=TEAL_VURGU, height=230)
-        self.vesikalik_kart.pack(fill="x")
-        self.vesikalik_kart.pack_propagate(False)
-        self.vesikalik_label = tk.Label(
-            self.vesikalik_kart, text="Karakter seçin",
-            bg=ZEMIN, fg=METIN_KOYU, font=("Segoe UI", 9))
-        self.vesikalik_label.pack(expand=True)
-
-        self.vesikalik_bilgi = tk.Label(
-            ves_f, text="", bg=KART, fg=METIN_KOYU,
-            font=("Segoe UI", 9), justify="left")
-        self.vesikalik_bilgi.pack(anchor="w", pady=(6, 0))
+        self.bilgi_label = tk.Label(
+            bilgi_f, text="Karakter seçin", bg=KART, fg=METIN_KOYU,
+            font=("Segoe UI", 9), justify="left", anchor="nw")
+        self.bilgi_label.pack(fill="both", expand=True, anchor="w")
 
         # Varyasyon önizleme alanı
         self.onizleme = tk.Frame(sag, bg=KART)
         self.onizleme.pack(fill="x", padx=12, pady=(4, 12))
-        tk.Label(self.onizleme, text="Varyasyonlar (canon seçmek için tıklayın)",
-                 bg=KART, fg=METIN_KOYU, font=("Segoe UI", 9)).pack(anchor="w")
+        ust_v = tk.Frame(self.onizleme, bg=KART)
+        ust_v.pack(fill="x")
+        tk.Label(ust_v, text="Varyasyonlar (canon seçmek için tıklayın)",
+                 bg=KART, fg=METIN_KOYU, font=("Segoe UI", 9)).pack(side="left")
+        ttk.Button(ust_v, text="Tümünü Kuyruğa Ekle", style="Teal.TButton",
+                   command=self._tumunu_kuyruga_ekle).pack(side="right")
         self.varyasyon_frame = tk.Frame(self.onizleme, bg=KART)
         self.varyasyon_frame.pack(fill="x", pady=4)
 
@@ -189,6 +191,7 @@ class SekmeKisilik(ttk.Frame):
             messagebox.showwarning("Seçim", "Önce bir karakter seçin")
             return
         pid = int(secili[0])
+        self._varyasyon_pid = pid
 
         self.yuz_durum.config(text="Yüz dönüştürülüyor (offline)...")
         threading.Thread(target=self._varyasyon_worker, args=(pid,),
@@ -197,7 +200,6 @@ class SekmeKisilik(ttk.Frame):
     def _varyasyon_worker(self, pid):
         try:
             from core import yuz_donusum
-            import time
             klasor = depolama.URETILEN_KLASOR / "kanon" / str(pid)
             sonuclar = yuz_donusum.varyasyon_uret(
                 self.secili_foto, klasor, sayi=8)
@@ -211,7 +213,9 @@ class SekmeKisilik(ttk.Frame):
 
     def _varyasyon_bitti(self, sonuclar):
         self.secili_yuz = sonuclar
-        self.yuz_durum.config(text=f"{len(sonuclar)} varyasyon üretildi. Canon seçmek için tıklayın.")
+        self.yuz_durum.config(
+            text=f"{len(sonuclar)} varyasyon üretildi. "
+                 "Canon seçmek için tıklayın; '+' ile kuyruğa ekleyin.")
         # Görsel küçük resimler
         for w in self.varyasyon_frame.winfo_children():
             w.destroy()
@@ -236,11 +240,16 @@ class SekmeKisilik(ttk.Frame):
                 yol = s["gorsel_yol"]
                 thumb_f.bind("<Button-1>", lambda e, y=yol: self._canon_sec_yuz(y))
                 lbl.bind("<Button-1>", lambda e, y=yol: self._canon_sec_yuz(y))
+                # + kuyruk butonu
+                ttk.Button(thumb_f, text="+", style="Teal.TButton",
+                           command=lambda y=yol, n=i + 1: self._kuyruga_ekle(y, n)
+                           ).pack(fill="x", pady=(2, 0))
         except Exception:
             for i, s in enumerate(sonuclar):
                 ttk.Button(self.varyasyon_frame, text=f"Varyasyon {i+1}",
                            style="Kart.TButton",
-                           command=lambda yol=s["gorsel_yol"]: self._canon_sec_yuz(yol)
+                           command=lambda yol=s["gorsel_yol"], n=i + 1:
+                               self._kuyruga_ekle(yol, n)
                            ).pack(side="left", padx=2)
 
     def _varyasyon_hata(self, hata):
@@ -254,6 +263,42 @@ class SekmeKisilik(ttk.Frame):
         kisilik.kanon_sec(pid, yol)
         messagebox.showinfo("Tamam", "Canon güncellendi")
         self._listeyi_yenile()
+        # Alt bardaki vesikalığı da tazele
+        persona = kisilik.persona_al(pid)
+        if persona:
+            self._bar_bildir(persona)
+
+    # --- Paylaşım kuyruğu ---
+    def _kuyruga_ekle(self, yol, no):
+        pid = self._varyasyon_pid
+        if not pid and self.tree.selection():
+            pid = int(self.tree.selection()[0])
+        if not pid:
+            messagebox.showwarning("Seçim", "Önce bir karakter seçin")
+            return
+        persona = kisilik.persona_al(pid)
+        ad = persona["ad"] if persona else f"ID {pid}"
+        depolama.post_ekle({
+            "persona_id": pid,
+            "sahne": f"Yüz varyasyonu V{no}",
+            "prompt": "",
+            "gorsel_yol": yol,
+            "caption": f"{ad} — suret varyasyonu V{no}",
+            "hashtags": "#ai #virtualinfluencer",
+            "durum": "onay_bekliyor",
+        })
+        self.yuz_durum.config(
+            text=f"V{no} kuyruğa eklendi → Üretim & Onay sekmesinden onaylayın.")
+
+    def _tumunu_kuyruga_ekle(self):
+        if not self.secili_yuz:
+            messagebox.showwarning("Yok", "Önce varyasyon üretin")
+            return
+        for i, s in enumerate(self.secili_yuz):
+            self._kuyruga_ekle(s["gorsel_yol"], i + 1)
+        self.yuz_durum.config(
+            text=f"{len(self.secili_yuz)} varyasyon kuyruğa eklendi → "
+                 "Üretim & Onay sekmesinden onaylayın.")
 
     # --- Liste ---
     def _listeyi_yenile(self):
@@ -262,6 +307,11 @@ class SekmeKisilik(ttk.Frame):
         for p in kisilik.persona_listele():
             self.tree.insert("", "end", iid=str(p["id"]),
                              values=(p["ad"], p["nis"], p["seed"], p["kaynak"]))
+        # İlk karakteri seç → alt bardaki vesikalık dolu gelsin
+        cocuklar = self.tree.get_children()
+        if cocuklar and not self.tree.selection():
+            self.tree.selection_set(cocuklar[0])
+            self.tree.event_generate("<<TreeviewSelect>>")
 
     def _secim(self, event):
         secili = self.tree.selection()
@@ -271,42 +321,22 @@ class SekmeKisilik(ttk.Frame):
         persona = kisilik.persona_al(pid)
         if not persona:
             return
-        # Vesikalık göster
-        kanon = persona.get("kanon_gorsel")
-        if kanon:
-            self._vesikalik_goster(kanon)
-        else:
-            self.vesikalik_label.config(image="", text="Canon yüz yok")
-            self.vesikalik_label.image = None
+        self._varyasyon_pid = pid
         # Bilgi
-        self.vesikalik_bilgi.config(
+        kanon = persona.get("kanon_gorsel")
+        self.bilgi_label.config(
             text=f"Ad: {persona['ad']}\nYaş: {persona.get('yas', '?')}\n"
                  f"Niş: {persona.get('nis', '?')}\n"
                  f"Seed: {persona.get('seed', '?')}\n"
-                 f"Kaynak: {persona.get('kaynak', 'ai')}")
+                 f"Kaynak: {persona.get('kaynak', 'ai')}\n"
+                 f"Canon: {'Var' if kanon else 'Yok'}")
+        self._bar_bildir(persona)
 
-    def _vesikalik_goster(self, gorsel_yol):
-        try:
-            from PIL import Image, ImageTk
-            img = Image.open(gorsel_yol)
-            w, h = img.size
-            oran = VESIKALIK_BOYUT[0] / VESIKALIK_BOYUT[1]
-            mevcut = w / h
-            if mevcut > oran:
-                yeni_w = int(h * oran)
-                x = (w - yeni_w) // 2
-                img = img.crop((x, 0, x + yeni_w, h))
-            else:
-                yeni_h = int(w / oran)
-                y = (h - yeni_h) // 2
-                img = img.crop((0, y, w, y + yeni_h))
-            img = img.resize(VESIKALIK_BOYUT, Image.LANCZOS)
-            cerceve = Image.new("RGB", (VESIKALIK_BOYUT[0] + 10,
-                                        VESIKALIK_BOYUT[1] + 10), (32, 184, 154))
-            cerceve.paste(img, (5, 5))
-            foto = ImageTk.PhotoImage(cerceve)
-            self.vesikalik_label.config(image=foto, text="")
-            self.vesikalik_label.image = foto
-        except Exception as e:
-            self.vesikalik_label.config(image="", text=f"Hata: {e}")
-            self.vesikalik_label.image = None
+    def _bar_bildir(self, persona):
+        if not self.on_karakter:
+            return
+        kanon = persona.get("kanon_gorsel")
+        baslik = f"{persona['ad']}  ·  {persona.get('nis', '')}"
+        alt = (f"Seed {persona.get('seed', '?')} · "
+               f"{'Canon hazır' if kanon else 'Canon yüz yok'}")
+        self.after(0, lambda: self.on_karakter(kanon, baslik, alt))

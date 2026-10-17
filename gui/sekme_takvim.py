@@ -5,14 +5,10 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from core import depolama, zamanlayici
+from gui.palet import CIZGI, KART, TEAL_KOYU, TEAL_VURGU, ZEMIN
 
 GUNLER = ["Pazartesi", "Salı", "Çarşamba", "Perşembe",
           "Cuma", "Cumartesi", "Pazar"]
-
-ZEMIN = "#F0F6F5"
-KART = "#FFFFFF"
-TEAL_KOYU = "#0D4F5C"
-TEAL_VURGU = "#2BB8A0"
 
 
 class SekmeTakvim(ttk.Frame):
@@ -22,7 +18,8 @@ class SekmeTakvim(ttk.Frame):
         self._yukle()
 
     def _kur(self):
-        sol = ttk.Frame(self, style="Kart.TFrame")
+        sol = tk.Frame(self, bg=KART, highlightthickness=1,
+                       highlightbackground=CIZGI)
         sol.pack(side="left", fill="y", padx=8, pady=8)
 
         ttk.Label(sol, text="Paylaşım Takvimi", style="Vurgu.TLabel",
@@ -74,7 +71,8 @@ class SekmeTakvim(ttk.Frame):
                   style="Kart.TLabel", justify="left").pack(anchor="w", padx=16, pady=8)
 
         # --- Sağ: liste + log ---
-        sag = ttk.Frame(self, style="Kart.TFrame")
+        sag = tk.Frame(self, bg=KART, highlightthickness=1,
+                       highlightbackground=CIZGI)
         sag.pack(side="left", fill="both", expand=True, padx=8, pady=8)
 
         ttk.Label(sag, text="Zamanlanmış Saatler", style="Vurgu.TLabel",

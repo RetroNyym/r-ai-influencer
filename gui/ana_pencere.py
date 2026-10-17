@@ -7,29 +7,11 @@ from pathlib import Path
 from tkinter import ttk
 
 from gui import sekme_api, sekme_kisilik, sekme_takvim, sekme_uretim
-
-# --- retro+ premium palet ---
-TEAL_KOYU = "#0A3D47"
-TEAL = "#0F6B6B"
-TEAL_ORTA = "#148A7D"
-TEAL_VURGU = "#20B89A"
-TEAL_PARLAK = "#3DDBB5"
-ZEMIN = "#EDF4F3"
-ZEMIN_KOYU = "#E2ECEA"
-KART = "#FFFFFF"
-KART_GOLGE = "#D0DEDC"
-CIZGI = "#C8D8D5"
-METIN_KOYU = "#0F2A2C"
-METIN_SOLUK = "#5A7A78"
-BASLIK_ZEMIN = TEAL_KOYU
-BASLIK_SOLUK = "#7AB5AE"
-YESIL = TEAL_VURGU
-YESIL_KOYU = TEAL_ORTA
-YESIL_METIN = "#0A5C4E"
-YESIL_ACIK = "#DFF5EE"
-AMBER = "#F0A830"
-AMBER_KOYU = "#C07800"
-AMBER_ZEMIN = "#FFF6E5"
+from gui.palet import (AMBER, AMBER_KOYU, AMBER_ZEMIN, BASLIK_SOLUK,
+                       BASLIK_ZEMIN, CIZGI, KART, KART_GOLGE, METIN_KOYU,
+                       METIN_SOLUK, TEAL, TEAL_KOYU, TEAL_ORTA, TEAL_PARLAK,
+                       TEAL_VURGU, VARLIK, YESIL, YESIL_ACIK, YESIL_KOYU,
+                       YESIL_METIN, ZEMIN, ZEMIN_KOYU, vesikalik_foto)
 
 VARLIK = Path(__file__).resolve().parent.parent / "varlik"
 
@@ -81,8 +63,8 @@ class AnaPencere(tk.Tk):
         self._foto_on_yukle()
         self._stil_kur()
         self._baslik_cubugu()
+        self._durum_cubugu()  # önce alt bar (sekme kurulumu vesikalığı çağırır)
         self._sekmeler()
-        self._durum_cubugu()
 
         self.protocol("WM_DELETE_WINDOW", self._kapat)
 
@@ -199,8 +181,10 @@ class AnaPencere(tk.Tk):
         self.notebook = ttk.Notebook(self, style="Notebook.TNotebook")
         self.notebook.pack(fill="both", expand=True, padx=14, pady=(10, 0))
 
-        self.sekme_kisilik = sekme_kisilik.SekmeKisilik(self.notebook)
-        self.sekme_uretim = sekme_uretim.SekmeUretim(self.notebook)
+        self.sekme_kisilik = sekme_kisilik.SekmeKisilik(
+            self.notebook, on_karakter=self.vesikalik_guncelle)
+        self.sekme_uretim = sekme_uretim.SekmeUretim(
+            self.notebook, on_karakter=self.vesikalik_guncelle)
         self.sekme_takvim = sekme_takvim.SekmeTakvim(self.notebook)
         self.sekme_api = sekme_api.SekmeApi(self.notebook,
                                             ig_foto=self._ig,
@@ -211,13 +195,67 @@ class AnaPencere(tk.Tk):
         self.notebook.add(self.sekme_takvim, text="  Takvim  ")
         self.notebook.add(self.sekme_api, text="  API & Bağlantılar  ")
 
+        # Sekme değişince üretim kuyruğunu tazele (kuyruğa eklenenler görünsün)
+        self.notebook.bind("<<NotebookTabChanged>>", self._sekme_degisti)
+
+    def _sekme_degisti(self, event=None):
+        try:
+            if self.notebook.index("current") == 1:
+                self.sekme_uretim._yukle()
+        except Exception:
+            pass
+
+    def vesikalik_guncelle(self, gorsel_yol, baslik="", alt=""):
+        """Alt bardaki global vesikalığı günceller (her sekmede görünür)."""
+        self.bar_ad.config(text=baslik or "Karakter seçin")
+        self.bar_alt.config(text=alt or "Vesikalık burada görünür")
+        try:
+            if gorsel_yol:
+                foto = vesikalik_foto(gorsel_yol, boyut=(46, 61))
+                self.bar_vesikalik.config(image=foto, text="")
+                self.bar_vesikalik.image = foto
+            else:
+                self.bar_vesikalik.config(image="", text="📷",
+                                          font=("Segoe UI", 16))
+                self.bar_vesikalik.image = None
+        except Exception:
+            self.bar_vesikalik.config(image="", text="—",
+                                      font=("Segoe UI", 12))
+            self.bar_vesikalik.image = None
+
     def _durum_cubugu(self):
-        bar = tk.Frame(self, bg=BASLIK_ZEMIN, height=30)
+        bar = tk.Frame(self, bg=BASLIK_ZEMIN, height=76)
         bar.pack(fill="x", side="bottom")
         bar.pack_propagate(False)
-        tk.Label(bar, text="  R+ v1.0  ·  retro+ premium  ·  MIT License",
-                 bg=BASLIK_ZEMIN, fg=BASLIK_SOLUK, anchor="w",
-                 font=("Segoe UI", 9)).pack(fill="x", padx=16, pady=5)
+
+        # Sol: vesikalık + karakter bilgisi (her sekmede görünür)
+        sol = tk.Frame(bar, bg=BASLIK_ZEMIN)
+        sol.pack(side="left", padx=16)
+
+        self.bar_vesikalik = tk.Label(sol, text="📷", bg=ZEMIN,
+                                      fg=METIN_SOLUK, width=8, height=3,
+                                      font=("Segoe UI", 16),
+                                      highlightthickness=1,
+                                      highlightbackground=CIZGI)
+        self.bar_vesikalik.pack(side="left", padx=(0, 12), pady=8)
+
+        bilgi = tk.Frame(sol, bg=BASLIK_ZEMIN)
+        bilgi.pack(side="left", pady=14)
+        self.bar_ad = tk.Label(bilgi, text="Karakter seçin",
+                               bg=BASLIK_ZEMIN, fg="#FFFFFF",
+                               font=("Segoe UI", 11, "bold"), anchor="w")
+        self.bar_ad.pack(anchor="w")
+        self.bar_alt = tk.Label(bilgi, text="Vesikalık burada görünür",
+                                bg=BASLIK_ZEMIN, fg=BASLIK_SOLUK,
+                                font=("Segoe UI", 9), anchor="w")
+        self.bar_alt.pack(anchor="w")
+
+        # Sağ: sürüm bilgisi
+        sag = tk.Frame(bar, bg=BASLIK_ZEMIN)
+        sag.pack(side="right", padx=20)
+        tk.Label(sag, text="  R+ v1.0  ·  retro+ premium  ·  MIT License",
+                 bg=BASLIK_ZEMIN, fg=BASLIK_SOLUK, anchor="e",
+                 font=("Segoe UI", 9)).pack()
 
     def _kapat(self):
         try:

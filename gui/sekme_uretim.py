@@ -20,9 +20,10 @@ VESIKALIK_BOYUT = (180, 240)  # 3:4 vesikalık oranı
 
 
 class SekmeUretim(ttk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, on_karakter=None):
         super().__init__(parent, style="Govde.TFrame")
         self._foto_onizleme = None
+        self.on_karakter = on_karakter  # (gorsel_yol|None, baslik, alt) — alt barda vesikalık
         self._kur()
         self._yukle()
 
@@ -53,15 +54,10 @@ class SekmeUretim(ttk.Frame):
         self.persona_cb.pack(side="left", fill="x", expand=True)
         self.persona_cb.bind("<<ComboboxSelected>>", self._persona_degisti)
 
-        # Seçili persona vesikalığı
-        self.persona_vesikalik_frame = tk.Frame(sol, bg=KART, height=200)
-        self.persona_vesikalik_frame.pack(fill="x", padx=18, pady=6)
-        self.persona_vesikalik_frame.pack_propagate(False)
-        self.persona_vesikalik_label = tk.Label(
-            self.persona_vesikalik_frame,
-            text="Karakter seçin",
-            bg=KART, fg=METIN_SOLUK, font=("Segoe UI", 9))
-        self.persona_vesikalik_label.pack(expand=True)
+        tk.Label(sol, text="Not: Seçili karakterin vesikalığı alt barda\n"
+                           "her sekmede görünür.",
+                 bg=KART, fg=METIN_SOLUK, font=("Segoe UI", 9),
+                 justify="left").pack(anchor="w", padx=18, pady=(2, 6))
 
         f2 = tk.Frame(sol, bg=KART)
         f2.pack(fill="x", padx=18, pady=4)
@@ -175,7 +171,9 @@ class SekmeUretim(ttk.Frame):
         self._persona_vesikalik_goster()
 
     def _persona_vesikalik_goster(self):
-        """Seçili persona'nın kanon görselini vesikalık olarak gösterir."""
+        """Seçili persona'nın kanon görselini alt bardaki vesikalığa bildirir."""
+        if not self.on_karakter:
+            return
         secim = self.persona_cb.get()
         if not secim:
             return
@@ -184,14 +182,10 @@ class SekmeUretim(ttk.Frame):
         if not persona:
             return
         kanon = persona.get("kanon_gorsel")
-        if kanon:
-            self._vesikalik_yukle(self.persona_vesikalik_label, kanon,
-                                  self.persona_vesikalik_frame)
-        else:
-            self.persona_vesikalik_label.config(
-                image="", text=f"{persona['ad']}\nSeed: {persona.get('seed')}\n"
-                               "Canon yüz yok — üretin")
-            self.persona_vesikalik_label.image = None
+        baslik = f"{persona['ad']}  ·  {persona.get('nis', '')}"
+        alt = (f"Seed {persona.get('seed', '?')} · "
+               f"{'Canon hazır' if kanon else 'Canon yüz yok'}")
+        self.on_karakter(kanon, baslik, alt)
 
     def _vesikalik_yukle(self, label_widget, gorsel_yol, frame_widget):
         """Görseli vesikalık oranında yükleyip label'a gösterir."""
